@@ -1,0 +1,30 @@
+# Blender MTL File: 'wood_palette.blend'
+# Material Count: 2
+
+newmtl Material
+Ns 250.000000
+Ka 1.000000 1.000000 1.000000
+Kd 0.800000 0.800000 0.800000
+Ks 0.000000 0.000000 0.000000
+Ke 0.000000 0.000000 0.000000
+Ni 1.450000
+d 1.000000
+illum 1
+map_Bump TEXTURE1\\Material.001_Normal.png
+map_Kd TEXTURE1\\Material.001_Base_color.png
+map_Ns TEXTURE1\\Material.001_Roughness.png
+refl TEXTURE1\\Material.001_Metallic.png
+
+newmtl Material.001
+Ns 250.000000
+Ka 1.000000 1.000000 1.000000
+Kd 0.800000 0.800000 0.800000
+Ks 0.000000 0.000000 0.000000
+Ke 0.000000 0.000000 0.000000
+Ni 1.450000
+d 1.000000
+illum 1
+map_Bump TEXTURE2\\Material.001_Normal.png
+map_Kd TEXTURE2\\Material.001_Base_color.png
+map_Ns TEXTURE2\\Material.001_Roughness.png
+refl TEXTURE2\\Material.001_Metallic.png
