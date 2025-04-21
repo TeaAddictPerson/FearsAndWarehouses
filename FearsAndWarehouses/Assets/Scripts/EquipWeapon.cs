@@ -7,6 +7,8 @@ public class EquipWeapon : MonoBehaviour
 
     private Rigidbody itemRb;
     private MeshCollider itemCollider;
+    private static bool handOccupied = false; 
+    private bool isEquipped = false;
 
     void Start()
     {
@@ -14,12 +16,17 @@ public class EquipWeapon : MonoBehaviour
         {
             itemRb = item.GetComponent<Rigidbody>();
             itemCollider = item.GetComponent<MeshCollider>();
+
+     
+            itemRb.isKinematic = false;
+            itemCollider.enabled = true;
+            item.transform.SetParent(null);
         }
     }
 
     void Update()
     {
-        if (Input.GetKey(KeyCode.F))
+        if (isEquipped && Input.GetKeyDown(KeyCode.F))
         {
             Drop();
         }
@@ -29,8 +36,11 @@ public class EquipWeapon : MonoBehaviour
     {
         if (item != null)
         {
+            isEquipped = false;
+            handOccupied = false;
+
             WeaponParent.DetachChildren();
-            item.transform.eulerAngles = new Vector3(0f, transform.eulerAngles.y, 0f); // поправил логическую ошибку
+            item.transform.eulerAngles = new Vector3(0f, transform.eulerAngles.y, 0f);
             itemRb.isKinematic = false;
             itemCollider.enabled = true;
         }
@@ -38,23 +48,25 @@ public class EquipWeapon : MonoBehaviour
 
     void Equip()
     {
-        if (item != null)
+        if (item != null && !handOccupied)
         {
+            isEquipped = true;
+            handOccupied = true;
+
             itemRb.isKinematic = true;
             itemCollider.enabled = false;
 
             item.transform.position = WeaponParent.position;
             item.transform.rotation = WeaponParent.rotation;
-
             item.transform.SetParent(WeaponParent);
         }
     }
 
     private void OnTriggerStay(Collider other)
     {
-        if (other.gameObject.CompareTag("Player"))
+        if (!isEquipped && !handOccupied && other.CompareTag("Player"))
         {
-            if (Input.GetKey(KeyCode.E))
+            if (Input.GetKeyDown(KeyCode.E))
             {
                 Equip();
             }
