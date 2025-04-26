@@ -15,7 +15,7 @@ public class SqlConnect : MonoBehaviour
     void CheckDatabaseConnection()
     {
       
-        string dbPath = Path.Combine(Application.dataPath, "OwlsCurse.db");
+        string dbPath = Path.Combine(Application.dataPath, "FearsAndWarehouses.db");
 
   
         string connectionString = $"URI=file:{dbPath}";
