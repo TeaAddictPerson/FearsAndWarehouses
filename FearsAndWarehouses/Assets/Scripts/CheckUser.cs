@@ -63,10 +63,12 @@ public class CheckUser : MonoBehaviour
                             {
                                 feedbackText.text = "Успешный вход!";
                                 Debug.Log("Успешный вход!");
-                                //SceneManager.LoadScene(3);
+                                SceneManager.LoadScene(0);
 
                                 UserSession.UserName = userName;
                                 Debug.Log($"Имя пользователя сохранено: {UserSession.UserName}");
+
+                               
                             }
                             else
                             {
