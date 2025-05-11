@@ -1,10 +1,4 @@
-﻿// CHANGE LOG
-// 
-// CHANGES || version VERSION
-//
-// "Enable/Disable Headbob, Changed look rotations - should result in reduced camera jitters" || version 1.0.1
-
-using System.Collections;
+﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
@@ -131,13 +125,17 @@ public class FirstPersonController : MonoBehaviour
 
     #endregion
 
+    [Header("Здоровье")]
+    public int maxHealth = 3;
+    private int currentHealth;
+    public bool isDead = false;
     private void Awake()
     {
         rb = GetComponent<Rigidbody>();
 
         crosshairObject = GetComponentInChildren<Image>();
 
-        // Set internal variables
+
         playerCamera.fieldOfView = fov;
         originalScale = transform.localScale;
         jointOriginalPos = joint.localPosition;
@@ -151,7 +149,9 @@ public class FirstPersonController : MonoBehaviour
 
     void Start()
     {
-        if(lockCursor)
+        currentHealth = maxHealth;
+
+        if (lockCursor)
         {
             Cursor.lockState = CursorLockMode.Locked;
         }
@@ -441,9 +441,27 @@ public class FirstPersonController : MonoBehaviour
         #endregion
     }
 
-    // Sets isGrounded based on a raycast sent straigth down from the player object
-    private void CheckGround()
+    public void TakeDamage(int damage)
     {
+        if (isDead) return;
+
+        currentHealth -= damage;
+        Debug.Log($"Игрок получил урон! Осталось здоровья: {currentHealth}");
+
+        if (currentHealth <= 0)
+        {
+            Die();
+        }
+    }
+
+    private void Die()
+    {
+        isDead = true;
+        Debug.Log("Игрок погиб!");
+    }
+
+        private void CheckGround()
+        {
         Vector3 origin = new Vector3(transform.position.x, transform.position.y - (transform.localScale.y * .5f), transform.position.z);
         Vector3 direction = transform.TransformDirection(Vector3.down);
         float distance = .75f;
@@ -457,7 +475,7 @@ public class FirstPersonController : MonoBehaviour
         {
             isGrounded = false;
         }
-    }
+        }
 
     private void Jump()
     {
