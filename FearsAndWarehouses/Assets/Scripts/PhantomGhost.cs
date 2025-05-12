@@ -80,38 +80,39 @@ public class PhantomGhost : MonoBehaviour
         }
     }
 
-    private void CheckForPlayer()
+   private void CheckForPlayer()
+{
+    Vector3 ghostEyePos = transform.position + Vector3.up * eyeHeight;
+    Vector3 playerHeadPos = player.position + Vector3.up * 1.6f; // Примерная высота головы игрока
+
+    float distanceToPlayer = Vector3.Distance(ghostEyePos, playerHeadPos);
+
+    if (distanceToPlayer <= detectionRange)
     {
-        // Проверяем расстояние на уровне ног
-        Vector3 ghostPosition = transform.position + Vector3.up * -1f;
-        Vector3 playerPosition = player.position + Vector3.up * -1f;
-        float distanceToPlayer = Vector3.Distance(ghostPosition, playerPosition);
+        Vector3 directionToPlayer = (playerHeadPos - ghostEyePos).normalized;
 
-        // Проверяем, находится ли игрок в пределах дальности обнаружения
-        if (distanceToPlayer <= detectionRange)
+        if (!Physics.Raycast(ghostEyePos, directionToPlayer, distanceToPlayer, obstacleLayer))
         {
-            // Проверяем, находится ли игрок в поле зрения
-            Vector3 directionToPlayer = (playerPosition - ghostPosition).normalized;
-            
-            // Проверяем, нет ли препятствий между призраком и игроком
-            if (!Physics.Raycast(ghostPosition, directionToPlayer, distanceToPlayer, obstacleLayer))
-            {
-                float angle = Vector3.Angle(-transform.up, directionToPlayer);
+            float angle = Vector3.Angle(-transform.up, directionToPlayer);
 
-                if (angle <= fieldOfView / 2f)
-                {
-                    isChasing = true;
-                    lastKnownPlayerPosition = player.position;
-                }
+            if (angle <= fieldOfView / 2f)
+            {
+                isChasing = true;
+                lastKnownPlayerPosition = player.position;
+                Debug.Log("Призрак обнаружил игрока и начал преследование!");
             }
         }
     }
+}
+
 
     private void ChasePlayer()
     {
         // Проверяем расстояние на уровне ног
-        Vector3 ghostPosition = transform.position + Vector3.up * -1f;
-        Vector3 playerPosition = player.position + Vector3.up * -1f;
+        Vector3 ghostPosition = transform.position + Vector3.up * eyeHeight;
+        Vector3 playerPosition = player.position + Vector3.up * 1.6f; // Высота головы игрока
+
+
         float distanceToPlayer = Vector3.Distance(ghostPosition, playerPosition);
 
         // Если игрок слишком далеко, прекращаем преследование
@@ -179,7 +180,7 @@ public class PhantomGhost : MonoBehaviour
     {
         // Визуализация дальности обнаружения
         Gizmos.color = Color.yellow;
-        Vector3 detectionCenter = transform.position + Vector3.up * -1f;
+        Vector3 detectionCenter = transform.position + Vector3.up * eyeHeight;
         Gizmos.DrawWireSphere(detectionCenter, detectionRange);
 
         // Визуализация поля зрения
