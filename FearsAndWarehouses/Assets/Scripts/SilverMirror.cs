@@ -3,37 +3,44 @@ using UnityEngine;
 public class SilverMirror : GhostItem
 {
     [Header("Настройки зеркала")]
-    public float absorptionRange = 1.5f; // Дальность поглощения призрака
-    public float absorptionTime = 2f; // Время, необходимое для поглощения
-    private float currentAbsorptionTime = 0f;
+    public Transform weaponParent; // Родительский объект для движения
+    public float absorptionRadius = 1.5f; // Радиус поглощения призраков
+
+    private void Start()
+    {
+        base.Start();
+        shouldMoveForward = true;
+        itemTransform = weaponParent;
+        originalPosition = weaponParent.localPosition;
+        targetPosition = originalPosition + Vector3.forward * maxMoveDistance;
+    }
+
+    protected override void StartUsing()
+    {
+        base.StartUsing();
+    }
 
     protected override void ContinueUsing()
     {
         base.ContinueUsing();
-
-        // Проверяем наличие призрака в радиусе действия
-        Collider[] colliders = Physics.OverlapSphere(transform.position, absorptionRange);
-        foreach (Collider collider in colliders)
+        if (shouldMoveForward)
         {
-            PhantomGhost ghost = collider.GetComponent<PhantomGhost>();
-            if (ghost != null)
-            {
-                currentAbsorptionTime += Time.deltaTime;
-                if (currentAbsorptionTime >= absorptionTime)
-                {
-                    // Уничтожаем призрака
-                    Destroy(ghost.gameObject);
-                    currentAbsorptionTime = 0f;
-                }
-                return;
-            }
+            // Плавно двигаем зеркало вперед
+            weaponParent.localPosition = Vector3.Lerp(weaponParent.localPosition, targetPosition, Time.deltaTime * moveSpeed);
         }
-        currentAbsorptionTime = 0f;
     }
 
     protected override void StopUsing()
     {
         base.StopUsing();
-        currentAbsorptionTime = 0f;
+        // Возвращаем зеркало в исходное положение
+        weaponParent.localPosition = Vector3.Lerp(weaponParent.localPosition, originalPosition, Time.deltaTime * moveSpeed);
+    }
+
+    private void OnDrawGizmosSelected()
+    {
+        // Визуализация радиуса поглощения
+        Gizmos.color = Color.yellow;
+        Gizmos.DrawWireSphere(transform.position, absorptionRadius);
     }
 } 
