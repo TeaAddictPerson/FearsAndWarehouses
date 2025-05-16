@@ -29,51 +29,50 @@ public class SilverMirror : GhostItem
     }
 
     protected override void ContinueUsing()
-{
-    base.ContinueUsing();
-
-    if (isCatching)
     {
-        Debug.Log("Зеркало: Ищем призраков в конусе...");
+        base.ContinueUsing();
 
-        // Сначала ищем все в большом радиусе (absorptionRadius)
-        Collider[] hits = Physics.OverlapSphere(transform.position, absorptionRadius);
-        bool foundPhantom = false;
-
-        float coneAngle = 45f; // Половина угла конуса в градусах (можно менять)
-
-        foreach (var hit in hits)
+        if (isCatching)
         {
-            if (hit.CompareTag("Phantom"))
-            {
-                Vector3 directionToPhantom = (hit.transform.position - weaponParent.position).normalized;
-                float angleToPhantom = Vector3.Angle(weaponParent.forward, directionToPhantom);
+            Debug.Log("Зеркало: Ищем призраков в конусе...");
 
-                if (angleToPhantom <= coneAngle)
+            // Сначала ищем все в большом радиусе (absorptionRadius)
+            Collider[] hits = Physics.OverlapSphere(transform.position, absorptionRadius);
+            bool foundPhantom = false;
+
+            float coneAngle = 45f; // Половина угла конуса в градусах (можно менять)
+
+            foreach (var hit in hits)
+            {
+                if (hit.CompareTag("Phantom"))
                 {
-                    PhantomGhost ghost = hit.GetComponent<PhantomGhost>();
-                    if (ghost != null && ghost.canBeCaught)
+                    Vector3 directionToPhantom = (hit.transform.position - weaponParent.position).normalized;
+                    float angleToPhantom = Vector3.Angle(weaponParent.forward, directionToPhantom);
+
+                    if (angleToPhantom <= coneAngle)
                     {
-                        Debug.Log($"Зеркало: Призрак {ghost.name} найден в конусе и будет пойман!");
-                        StartCoroutine(CatchGhost(ghost));
-                        foundPhantom = true;
-                        break;
-                    }
-                    else
-                    {
-                        Debug.Log($"Зеркало: Призрак {ghost?.name} найден, но ещё не атаковал игрока.");
+                        PhantomGhost ghost = hit.GetComponent<PhantomGhost>();
+                        if (ghost != null && (ghost.canBeCaught || ghost.IsChasing()))
+                        {
+                            Debug.Log($"Зеркало: Призрак {ghost.name} найден в конусе и будет пойман!");
+                            StartCoroutine(CatchGhost(ghost));
+                            foundPhantom = true;
+                            break;
+                        }
+                        else
+                        {
+                            Debug.Log($"Зеркало: Призрак {ghost?.name} найден, но ещё не активен для поимки.");
+                        }
                     }
                 }
             }
-        }
 
-        if (!foundPhantom)
-        {
-            Debug.Log("Зеркало: Подходящих призраков в конусе не найдено.");
+            if (!foundPhantom)
+            {
+                Debug.Log("Зеркало: Подходящих призраков в конусе не найдено.");
+            }
         }
     }
-}
-
 
     protected override void StopUsing()
     {
@@ -95,11 +94,14 @@ public class SilverMirror : GhostItem
         {
             foreach (var renderer in renderers)
             {
-                foreach (var mat in renderer.materials)
+                if (renderer != null)
                 {
-                    Color color = mat.color;
-                    color.a = Mathf.Lerp(1f, 0f, elapsed / duration);
-                    mat.color = color;
+                    foreach (var mat in renderer.materials)
+                    {
+                        Color color = mat.color;
+                        color.a = Mathf.Lerp(1f, 0f, elapsed / duration);
+                        mat.color = color;
+                    }
                 }
             }
 
@@ -107,45 +109,57 @@ public class SilverMirror : GhostItem
             yield return null;
         }
 
-        Debug.Log($"Зеркало: Призрак {ghost.name} пойман.");
-        Destroy(ghost.gameObject);
-    }
-
-private void OnDrawGizmosSelected()
-{
-    Gizmos.color = Color.cyan;
-
-    // Радиус для базового круга у основания конуса (можно уменьшить, т.к. конус — длинный)
-    float coneLength = 5f; // увеличиваем длину конуса (например, 5 метров)
-    float coneAngle = 45f; // угол конуса в градусах
-
-    // Позиция и направление конуса
-    Vector3 origin = weaponParent ? weaponParent.position : transform.position;
-    Vector3 forward = weaponParent ? weaponParent.forward : transform.forward;
-
-    // Нарисуем линию центрального луча конуса
-    Gizmos.DrawLine(origin, origin + forward * coneLength);
-
-    // Вычислим радиус основания конуса (высота * тангенс угла)
-    float baseRadius = coneLength * Mathf.Tan(coneAngle * Mathf.Deg2Rad);
-
-    // Нарисуем окружность основания конуса
-    int segments = 24;
-    Vector3 prevPoint = Vector3.zero;
-    for (int i = 0; i <= segments; i++)
-    {
-        float angle = (360f / segments) * i;
-        // Вектор радиуса окружности в локальных координатах
-        Vector3 circlePoint = Quaternion.AngleAxis(angle, forward) * (weaponParent.right * baseRadius);
-        Vector3 worldPoint = origin + forward * coneLength + circlePoint;
-
-        if (i > 0)
+        // Находим партиклы и перемещаем их на место смерти призрака
+        GameObject dustParticles = GameObject.FindGameObjectWithTag("Dust");
+        if (dustParticles != null)
         {
-            Gizmos.DrawLine(prevPoint, worldPoint);
-            Gizmos.DrawLine(origin, worldPoint);
+            Vector3 ghostPosition = ghost.transform.position;
+            dustParticles.transform.position = ghostPosition;
+            ParticleSystem particles = dustParticles.GetComponent<ParticleSystem>();
+            if (particles != null)
+            {
+                particles.Play();
+            }
         }
-        prevPoint = worldPoint;
-    }
-}
 
+        Debug.Log($"Зеркало: Призрак {ghost.name} пойман.");
+        ghost.gameObject.SetActive(false);
+    }
+
+    private void OnDrawGizmosSelected()
+    {
+        Gizmos.color = Color.cyan;
+
+        // Радиус для базового круга у основания конуса (можно уменьшить, т.к. конус — длинный)
+        float coneLength = 5f; // увеличиваем длину конуса (например, 5 метров)
+        float coneAngle = 45f; // угол конуса в градусах
+
+        // Позиция и направление конуса
+        Vector3 origin = weaponParent ? weaponParent.position : transform.position;
+        Vector3 forward = weaponParent ? weaponParent.forward : transform.forward;
+
+        // Нарисуем линию центрального луча конуса
+        Gizmos.DrawLine(origin, origin + forward * coneLength);
+
+        // Вычислим радиус основания конуса (высота * тангенс угла)
+        float baseRadius = coneLength * Mathf.Tan(coneAngle * Mathf.Deg2Rad);
+
+        // Нарисуем окружность основания конуса
+        int segments = 24;
+        Vector3 prevPoint = Vector3.zero;
+        for (int i = 0; i <= segments; i++)
+        {
+            float angle = (360f / segments) * i;
+            // Вектор радиуса окружности в локальных координатах
+            Vector3 circlePoint = Quaternion.AngleAxis(angle, forward) * (weaponParent.right * baseRadius);
+            Vector3 worldPoint = origin + forward * coneLength + circlePoint;
+
+            if (i > 0)
+            {
+                Gizmos.DrawLine(prevPoint, worldPoint);
+                Gizmos.DrawLine(origin, worldPoint);
+            }
+            prevPoint = worldPoint;
+        }
+    }
 }

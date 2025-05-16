@@ -163,6 +163,11 @@ public class PhantomGhost : MonoBehaviour
         return hasAttacked;
     }
 
+    public bool IsChasing()
+    {
+        return isChasing;
+    }
+
     private void OnDrawGizmosSelected()
     {
         Vector3 detectionCenter = transform.position + Vector3.up * eyeHeight;
