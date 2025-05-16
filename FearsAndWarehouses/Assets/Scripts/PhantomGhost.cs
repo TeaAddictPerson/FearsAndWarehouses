@@ -1,4 +1,5 @@
 using UnityEngine;
+using System.Collections;
 
 public class PhantomGhost : MonoBehaviour
 {
@@ -19,11 +20,17 @@ public class PhantomGhost : MonoBehaviour
     public float chaseRange = 10f;
     public float damageDistance = 1.5f;
 
+    [Header("Скример")]
+    public GameObject screamerImage;
+    public AudioSource screamerSound;
+    public float screamerDuration = 2f;
+
     private Transform player;
     private int currentPatrolIndex = 0;
     private bool isChasing = false;
     private Vector3 lastKnownPlayerPosition;
     private bool hasAttacked = false;
+    private bool hasPlayedScreamer = false;
 
     [HideInInspector] public bool canBeCaught = false;
 
@@ -153,10 +160,42 @@ public class PhantomGhost : MonoBehaviour
                     canBeCaught = true;
                     hasAttacked = true;
                     Debug.Log($"{name}: Атаковал игрока — теперь может быть пойман!");
+
+                    if (!hasPlayedScreamer)
+                    {
+                        hasPlayedScreamer = true;
+                        StartCoroutine(PlayScreamer());
+                    }
                 }
             }
         }
     }
+
+    private IEnumerator PlayScreamer()
+    {
+        if (screamerImage != null)
+            screamerImage.SetActive(true);
+
+        if (screamerSound != null)
+            screamerSound.Play();
+
+        // Ждём пока скример отобразится
+        yield return new WaitForSeconds(screamerDuration);
+
+        if (screamerImage != null)
+            screamerImage.SetActive(false);
+
+        // После завершения скримера — перемещаем призрака и сбрасываем флаги
+        if (patrolPoints.Length > 0)
+        {
+            transform.position = patrolPoints[0].position;
+            currentPatrolIndex = 0;
+            isChasing = false;
+            canBeCaught = false;
+            hasAttacked = false;
+        }
+    }
+
 
     public bool HasAttackedPlayer()
     {
