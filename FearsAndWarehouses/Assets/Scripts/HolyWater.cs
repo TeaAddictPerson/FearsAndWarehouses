@@ -3,8 +3,13 @@ using UnityEngine;
 public class HolyWater : StaticGhostItem
 {
     [Header("Настройки святой воды")]
-    public Transform weaponParent; // Точка удержания предмета
     public ParticleSystem holyWaterParticle; // Система частиц святой воды
+    private EquipWeapon equipWeapon;
+
+    private void Awake()
+    {
+        equipWeapon = GetComponent<EquipWeapon>();
+    }
 
     private void Start()
     {
@@ -12,12 +17,16 @@ public class HolyWater : StaticGhostItem
         {
             Debug.LogError("HolyWater: holyWaterParticle не назначен!");
         }
+        else
+        {
+            holyWaterParticle.Stop();
+        }
     }
 
     protected override void StartUsing()
     {
         base.StartUsing();
-        if (holyWaterParticle != null)
+        if (IsEquipped() && !holyWaterParticle.isPlaying)
         {
             holyWaterParticle.Play();
         }
@@ -26,7 +35,7 @@ public class HolyWater : StaticGhostItem
     protected override void ContinueUsing()
     {
         base.ContinueUsing();
-        if (holyWaterParticle != null && !holyWaterParticle.isPlaying)
+        if (IsEquipped() && !holyWaterParticle.isPlaying)
         {
             holyWaterParticle.Play();
         }
@@ -35,9 +44,14 @@ public class HolyWater : StaticGhostItem
     protected override void StopUsing()
     {
         base.StopUsing();
-        if (holyWaterParticle != null)
+        if (holyWaterParticle.isPlaying)
         {
             holyWaterParticle.Stop();
         }
+    }
+
+    private bool IsEquipped()
+    {
+        return equipWeapon != null && equipWeapon.IsEquipped;
     }
 }

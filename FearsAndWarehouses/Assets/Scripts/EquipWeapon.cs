@@ -7,7 +7,7 @@ public class EquipWeapon : MonoBehaviour
 
     private Rigidbody itemRb;
     private MeshCollider itemCollider;
-    private static bool handOccupied = false; 
+    private static bool handOccupied = false;
     private bool isEquipped = false;
 
     void Start()
@@ -17,7 +17,7 @@ public class EquipWeapon : MonoBehaviour
             itemRb = item.GetComponent<Rigidbody>();
             itemCollider = item.GetComponent<MeshCollider>();
 
-     
+
             itemRb.isKinematic = false;
             itemCollider.enabled = true;
             item.transform.SetParent(null);
@@ -72,4 +72,6 @@ public class EquipWeapon : MonoBehaviour
             }
         }
     }
+    
+    public bool IsEquipped => isEquipped;
 }

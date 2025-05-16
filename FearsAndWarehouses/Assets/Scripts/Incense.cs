@@ -1,53 +1,54 @@
 using UnityEngine;
 
-public class Incense : GhostItem
+public class Incense : StaticGhostItem
 {
     [Header("Настройки благовоний")]
-    public GameObject smokeParticleSystem; // Префаб системы частиц для дыма
-    public float smokeDuration = 3f; // Длительность эффекта дыма
-    private GameObject currentSmokeEffect;
-    private float smokeTimer = 0f;
+    public ParticleSystem incenseParticle; // Частицы дыма благовоний
+    private EquipWeapon equipWeapon;
+    private bool hasBeenUsed = false;
 
-    protected override void Update()
+    private void Awake()
     {
-        // Переопределяем базовый Update для работы по нажатию, а не удержанию
-        if (Input.GetKeyDown(KeyCode.E))
-        {
-            StartSmoke();
-        }
+        equipWeapon = GetComponent<EquipWeapon>();
+    }
 
-        if (currentSmokeEffect != null)
+    private void Start()
+    {
+        if (incenseParticle == null)
         {
-            smokeTimer += Time.deltaTime;
-            if (smokeTimer >= smokeDuration)
-            {
-                StopSmoke();
-            }
+            Debug.LogError("Incense: incenseParticle не назначен!");
+        }
+        else
+        {
+            incenseParticle.Stop();
         }
     }
 
-    private void StartSmoke()
+    protected override void StartUsing()
     {
-        if (smokeParticleSystem != null && currentSmokeEffect == null)
+        base.StartUsing();
+
+        if (!hasBeenUsed && IsEquipped())
         {
-            currentSmokeEffect = Instantiate(smokeParticleSystem, transform.position, transform.rotation);
-            currentSmokeEffect.transform.parent = transform;
-            smokeTimer = 0f;
+            incenseParticle.Play();
+            hasBeenUsed = true;
         }
     }
 
-    private void StopSmoke()
+    protected override void ContinueUsing()
     {
-        if (currentSmokeEffect != null)
-        {
-            Destroy(currentSmokeEffect);
-            currentSmokeEffect = null;
-            smokeTimer = 0f;
-        }
+        base.ContinueUsing();
+        // Ничего не делаем: частицы запускаются один раз и больше не останавливаются
     }
 
-    // Отключаем базовую функциональность удержания
-    protected override void StartUsing() { }
-    protected override void ContinueUsing() { }
-    protected override void StopUsing() { }
-} 
+    protected override void StopUsing()
+    {
+        base.StopUsing();
+        // Также ничего не делаем: частицы продолжают идти
+    }
+
+    private bool IsEquipped()
+    {
+        return equipWeapon != null && equipWeapon.IsEquipped;
+    }
+}
