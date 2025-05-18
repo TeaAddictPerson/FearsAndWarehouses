@@ -32,6 +32,9 @@ public class PhantomGhost : MonoBehaviour
     private bool hasAttacked = false;
     private bool hasPlayedScreamer = false;
 
+    private bool isCooldown = false;  // флаг кулдауна
+    private float cooldownTime = 20f;
+
     [HideInInspector] public bool canBeCaught = false;
 
     private void Start()
@@ -144,17 +147,15 @@ public class PhantomGhost : MonoBehaviour
         targetPosition.y = transform.position.y;
         transform.position = targetPosition;
 
-        if (Vector3.Distance(transform.position, lastKnownPlayerPosition) < 0.1f && distanceToPlayer > detectionRange)
-        {
-            isChasing = false;
-        }
-
-        if (distanceToPlayer <= damageDistance)
+        // Атака и кулдаун
+        if (distanceToPlayer <= damageDistance && !isCooldown)
         {
             FirstPersonController playerController = player.GetComponent<FirstPersonController>();
             if (playerController != null)
             {
                 playerController.TakeDamage(1);
+                StartCoroutine(StartCooldown());
+
                 if (!canBeCaught)
                 {
                     canBeCaught = true;
@@ -171,6 +172,15 @@ public class PhantomGhost : MonoBehaviour
         }
     }
 
+    private IEnumerator StartCooldown()
+    {
+        isCooldown = true;
+        Debug.Log($"{name}: Начинаю кулдаун на {cooldownTime} секунд");
+        yield return new WaitForSeconds(cooldownTime);
+        isCooldown = false;
+        Debug.Log($"{name}: Кулдаун завершён, могу атаковать снова");
+    }
+
     private IEnumerator PlayScreamer()
     {
         if (screamerImage != null)
@@ -179,13 +189,11 @@ public class PhantomGhost : MonoBehaviour
         if (screamerSound != null)
             screamerSound.Play();
 
-        // Ждём пока скример отобразится
         yield return new WaitForSeconds(screamerDuration);
 
         if (screamerImage != null)
             screamerImage.SetActive(false);
 
-        // После завершения скримера — перемещаем призрака и сбрасываем флаги
         if (patrolPoints.Length > 0)
         {
             transform.position = patrolPoints[0].position;
@@ -195,7 +203,6 @@ public class PhantomGhost : MonoBehaviour
             hasAttacked = false;
         }
     }
-
 
     public bool HasAttackedPlayer()
     {

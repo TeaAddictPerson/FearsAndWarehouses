@@ -61,7 +61,7 @@ public class CheckUser : MonoBehaviour
 
                             if (storedPassword == password)
                             {
-                                feedbackText.text = "Успешный вход!";
+                                feedbackText.text = "Успешный вход! Подождите загрузку";
                                 Debug.Log("Успешный вход!");
                                 SceneManager.LoadScene(0);
 

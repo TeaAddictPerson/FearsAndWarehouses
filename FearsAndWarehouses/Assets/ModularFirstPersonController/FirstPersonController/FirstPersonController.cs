@@ -454,13 +454,26 @@ public class FirstPersonController : MonoBehaviour
         }
     }
 
-    private void Die()
+    void Die()
     {
         isDead = true;
-        Debug.Log("Игрок погиб!");
+        // отключаем управление игроком, если нужно
+
+        DeathUIManager deathUI = FindObjectOfType<DeathUIManager>();
+        if (deathUI != null)
+        {
+            deathUI.ShowDeathScreen();
+        }
     }
 
-        private void CheckGround()
+    public void RestoreHealth()
+    {
+        currentHealth = maxHealth;
+        isDead = false;
+        // включаем управление игроком, если отключали
+    }
+
+    private void CheckGround()
         {
         Vector3 origin = new Vector3(transform.position.x, transform.position.y - (transform.localScale.y * .5f), transform.position.z);
         Vector3 direction = transform.TransformDirection(Vector3.down);
