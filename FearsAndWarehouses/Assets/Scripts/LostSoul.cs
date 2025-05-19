@@ -1,6 +1,5 @@
 using UnityEngine;
 using System.Collections;
-using System.Collections.Generic;
 using UnityEngine.AI;
 
 public class LostSoul : MonoBehaviour
@@ -8,46 +7,42 @@ public class LostSoul : MonoBehaviour
     [Header("Настройки заблудшей души")]
     public float moveSpeed = 3f;
     public float patrolRadius = 10f;
-    public float footstepInterval = 1f;
     public float attackRange = 2f;
     public float attackSpeed = 10f;
     public float stunDuration = 15f;
     public float cooldownDuration = 20f;
     public float playerStunDuration = 3f;
-    public float minAttackDistance = 3f; // Минимальная дистанция для атаки
-    public float maxAttackDistance = 8f; // Максимальная дистанция для атаки
+    public float minAttackDistance = 3f;
+    public float maxAttackDistance = 8f;
     public AudioClip[] footstepSounds;
     public AudioClip attackSound;
     public AudioSource audioSource;
 
     [Header("Точки появления")]
     public Transform[] spawnPoints;
-    public float initialSpawnDelay = 15f; // Задержка перед первым появлением
+    public float initialSpawnDelay = 15f;
 
     [Header("Анимации")]
     private Animator animator;
     private readonly int IdleHash = Animator.StringToHash("Idle");
     private readonly int WalkHash = Animator.StringToHash("Walk");
     private readonly int AttackHash = Animator.StringToHash("ZombieAttack");
+    private readonly int RunHash = Animator.StringToHash("RunForward");
 
+    private NavMeshAgent agent;
     private Vector3 spawnPoint;
-    private bool isVisible = false;
-    private bool isAttacking = false;
-    private bool isStunned = false;
-    private bool isOnCooldown = false;
-    private float lastFootstepTime;
+    private bool isVisible, isAttacking, isStunned, isOnCooldown, isMoving, isAggressive, isActive, isInitialized;
+    private bool hasReactedToIncense = false;
+    private float lastFootstepTime, currentCooldownTime, currentStunTime;
     private Vector3 attackTarget;
-    private float currentCooldownTime;
-    private float currentStunTime;
+
+    [SerializeField] private Transform weaponParent;
+    [SerializeField] private SkinnedMeshRenderer ghostRenderer;
+    [SerializeField] private float detectionRadius = 5f;
+    [SerializeField] private float footstepInterval = 0.5f;
+
     private EquipWeapon playerEquipWeapon;
     private FirstPersonController playerController;
-    private bool isActive = false;
-    private bool isInitialized = false;
-    private NavMeshAgent agent;
-    private bool isMoving = false;
-    private bool isAggressive = false;
-
-
 
     private void Start()
     {
@@ -59,30 +54,18 @@ public class LostSoul : MonoBehaviour
     {
         if (isInitialized) return;
 
-        // Инициализация NavMeshAgent
-        agent = GetComponent<NavMeshAgent>();
-        if (agent == null)
-        {
-            agent = gameObject.AddComponent<NavMeshAgent>();
-        }
+        agent = GetComponent<NavMeshAgent>() ?? gameObject.AddComponent<NavMeshAgent>();
         agent.speed = moveSpeed;
         agent.stoppingDistance = 0.1f;
 
-        audioSource = GetComponent<AudioSource>();
-        if (audioSource == null)
-        {
-            audioSource = gameObject.AddComponent<AudioSource>();
-        }
-        
-        // Настраиваем аудио источник
-        audioSource.spatialBlend = 1f; // 3D звук
+        audioSource = GetComponent<AudioSource>() ?? gameObject.AddComponent<AudioSource>();
+        audioSource.spatialBlend = 1f;
         audioSource.minDistance = 1f;
         audioSource.maxDistance = 20f;
         audioSource.rolloffMode = AudioRolloffMode.Linear;
-        
+
         SetVisibility(false);
-        
-        // Находим компоненты игрока
+
         GameObject player = GameObject.FindGameObjectWithTag("Player");
         if (player != null)
         {
@@ -90,26 +73,19 @@ public class LostSoul : MonoBehaviour
             playerController = player.GetComponent<FirstPersonController>();
         }
 
-        // Получаем компонент аниматора
         animator = GetComponent<Animator>();
-        if (animator == null)
-        {
-            Debug.LogError("LostSoul: Animator component not found!");
-        }
+        if (!animator) Debug.LogError("LostSoul: Animator not found!");
 
         isInitialized = true;
     }
 
     private IEnumerator InitialSpawn()
     {
-        // Ждем 15 секунд перед первым появлением
         yield return new WaitForSeconds(initialSpawnDelay);
-
-        // Выбираем случайную точку появления
         if (spawnPoints.Length > 0)
         {
-            Transform spawnPoint = spawnPoints[Random.Range(0, spawnPoints.Length)];
-            SpawnAtPoint(spawnPoint);
+            Transform point = spawnPoints[Random.Range(0, spawnPoints.Length)];
+            SpawnAtPoint(point);
         }
     }
 
@@ -118,308 +94,165 @@ public class LostSoul : MonoBehaviour
         transform.position = point.position;
         spawnPoint = point.position;
         isActive = true;
-        SetVisibility(false);
         isVisible = false;
         isAttacking = false;
         isStunned = false;
         isOnCooldown = false;
         isMoving = false;
+        SetVisibility(false);
 
-        // Запускаем анимацию простоя
-        if (animator != null)
+        if (animator)
         {
             animator.SetBool(WalkHash, false);
             animator.SetBool(IdleHash, true);
+            animator.SetBool(RunHash, false);
         }
 
-        // Устанавливаем начальную позицию для NavMeshAgent
         agent.Warp(point.position);
-
-        Debug.Log($"LostSoul: Появился в точке {point.position}");
     }
 
     private void Update()
     {
         if (!isActive) return;
 
-        if (isAggressive)
+        if (!hasReactedToIncense)
+            CheckForIncense();
+
+        if (isAggressive && !isAttacking && !isStunned && !isOnCooldown)
         {
-            if (!isAttacking && !isStunned && !isOnCooldown)
-            {
-                CheckForIncense();
-            }
+            StartCoroutine(AttackRoutine());
         }
-        else
+
+        if (!isAggressive && !isAttacking && !isStunned && !isOnCooldown)
         {
-            CheckForIncense(); // Проверяем благовония постоянно
-            if (!isVisible && !isAttacking && !isStunned && !isOnCooldown)
+            Patrol();
+
+            isMoving = agent.velocity.magnitude > 0.1f;
+            HandleFootsteps();
+
+            if (animator)
             {
-                Patrol();
-                isMoving = agent.velocity.magnitude > 0.1f;
-                if (isMoving)
-                {
-                    PlayFootsteps();
-                    if (animator != null)
-                    {
-                        animator.SetBool(WalkHash, true);
-                        animator.SetBool(IdleHash, false);
-                    }
-                }
-                else
-                {
-                    if (animator != null)
-                    {
-                        animator.SetBool(WalkHash, false);
-                        animator.SetBool(IdleHash, true);
-                    }
-                }
+                animator.SetBool(WalkHash, isMoving);
+                animator.SetBool(IdleHash, !isMoving);
+                animator.SetBool(RunHash, false);
             }
         }
 
-        if (isStunned)
-        {
-            HandleStun();
-            if (animator != null)
-            {
-                animator.SetBool(WalkHash, false);
-                animator.SetBool(IdleHash, true);
-            }
-        }
-        else if (isOnCooldown)
-        {
-            HandleCooldown();
-            if (animator != null)
-            {
-                animator.SetBool(WalkHash, false);
-                animator.SetBool(IdleHash, true);
-            }
-        }
+        if (isStunned) HandleStun();
+        else if (isOnCooldown) HandleCooldown();
     }
 
     private void Patrol()
     {
         if (agent.remainingDistance <= agent.stoppingDistance)
         {
-            Vector3 point;
-            if (RandomPoint(spawnPoint, patrolRadius, out point))
-            {
+            if (RandomPoint(spawnPoint, patrolRadius, out Vector3 point))
                 agent.SetDestination(point);
-            }
         }
     }
 
     private bool RandomPoint(Vector3 center, float range, out Vector3 result)
     {
         Vector3 randomPoint = center + Random.insideUnitSphere * range;
-        NavMeshHit hit;
-        if (NavMesh.SamplePosition(randomPoint, out hit, 1.0f, NavMesh.AllAreas))
+        if (NavMesh.SamplePosition(randomPoint, out NavMeshHit hit, 1f, NavMesh.AllAreas))
         {
             result = hit.position;
             return true;
         }
-
         result = Vector3.zero;
         return false;
     }
 
-    private void PlayFootsteps()
+    private void CheckForIncense()
     {
-        if (Time.time - lastFootstepTime >= footstepInterval && !audioSource.isPlaying)
+        if (!playerController || !weaponParent) return;
+
+        foreach (Transform child in weaponParent)
         {
-            if (footstepSounds.Length > 0)
+            if (child.CompareTag("Incense") &&
+                Vector3.Distance(transform.position, playerController.transform.position) <= detectionRadius)
             {
-                AudioClip randomFootstep = footstepSounds[Random.Range(0, footstepSounds.Length)];
-                audioSource.clip = randomFootstep;
-                audioSource.pitch = 1f;
-                audioSource.Play();
-            }
-            lastFootstepTime = Time.time;
-        }
-    }
-
-   [SerializeField] private Transform weaponParent;
-[SerializeField] private SkinnedMeshRenderer ghostRenderer; // или Renderer/MeshRenderer — зависит от модели
-[SerializeField] private float detectionRadius = 5f;
-
-private void CheckForIncense()
-{
-    if (playerController == null || weaponParent == null)
-    {
-        Debug.LogWarning("LostSoul: playerController или weaponParent не назначены.");
-        return;
-    }
-
-    bool incenseDetected = false;
-
-    foreach (Transform child in weaponParent)
-    {
-        if (child.CompareTag("Incense"))
-        {
-            float distanceToPlayer = Vector3.Distance(transform.position, playerController.transform.position);
-            if (distanceToPlayer <= detectionRadius)
-            {
-                Debug.Log($"LostSoul: Обнаружены благовония '{child.name}' на дистанции {distanceToPlayer}");
-                incenseDetected = true;
+                hasReactedToIncense = true;
+                isAggressive = true;
+                SetVisibility(true);
+                agent.enabled = false;
                 break;
             }
-            else
-            {
-                Debug.Log($"LostSoul: Благовония вне зоны действия. Дистанция: {distanceToPlayer}");
-            }
         }
     }
-
-    if (incenseDetected)
-    {
-        if (!isAggressive)
-        {
-            isAggressive = true;
-
-            // Призрак становится видимым
-            if (ghostRenderer != null)
-                ghostRenderer.enabled = true;
-
-            // Отключаем NavMeshAgent
-            agent.enabled = false;
-
-            // Запускаем атаку
-            StartCoroutine(AttackRoutine());
-        }
-    }
-    else
-    {
-        isAggressive = false;
-
-        // Призрак становится невидимым
-        if (ghostRenderer != null)
-            ghostRenderer.enabled = false;
-
-        if (!isAttacking && !isStunned && !isOnCooldown)
-        {
-            agent.enabled = true;
-        }
-    }
-}
 
     private IEnumerator AttackRoutine()
     {
-        while (isAggressive && !isStunned && !isOnCooldown)
+        isAttacking = true;
+
+        yield return new WaitForSeconds(0.5f);
+
+        Vector3 attackPos = GetRandomAttackPosition();
+        transform.position = attackPos;
+        SetVisibility(true); // Призрак становится видим при атаке
+
+        Vector3 dirToPlayer = (playerController.transform.position - transform.position).normalized;
+        transform.rotation = Quaternion.LookRotation(dirToPlayer);
+
+        if (animator)
         {
-            // Проверяем, что благовония все еще активны
-            if (playerEquipWeapon != null && playerEquipWeapon.IsEquipped && 
-                playerEquipWeapon.item != null)
-            {
-                Incense incense = playerEquipWeapon.item.GetComponent<Incense>();
-                if (incense != null && incense.IsEquipped)
-                {
-                    // Выбираем точку появления рядом с игроком
-                    Vector3 attackPosition = GetRandomAttackPosition();
-                    transform.position = attackPosition;
-                    SetVisibility(true);
-                    isVisible = true;
-
-                    // Поворачиваемся к игроку
-                    Vector3 directionToPlayer = (playerController.transform.position - transform.position).normalized;
-                    transform.rotation = Quaternion.LookRotation(directionToPlayer);
-
-                    // Запускаем атаку
-                    yield return StartCoroutine(PerformAttack());
-
-                    // После атаки
-                    SetVisibility(false);
-                    isVisible = false;
-                    isAttacking = false;
-
-                    // Ждем кулдаун
-                    isOnCooldown = true;
-                    currentCooldownTime = cooldownDuration;
-                    yield return new WaitForSeconds(cooldownDuration);
-                    isOnCooldown = false;
-                }
-                else
-                {
-                    isAggressive = false;
-                    agent.enabled = true;
-                    yield break;
-                }
-            }
-            else
-            {
-                isAggressive = false;
-                agent.enabled = true;
-                yield break;
-            }
+            animator.SetBool(WalkHash, false);
+            animator.SetBool(IdleHash, false);
+            animator.SetBool(RunHash, true);
+            animator.SetTrigger(AttackHash);
         }
+
+        if (attackSound != null) audioSource.PlayOneShot(attackSound);
+
+        attackTarget = playerController.transform.position;
+        agent.enabled = true;
+        agent.SetDestination(attackTarget);
+
+        while (agent.remainingDistance > attackRange && !agent.pathPending)
+        {
+            yield return null;
+        }
+
+        agent.isStopped = true;
+        agent.enabled = false;
+
+        if (Vector3.Distance(transform.position, attackTarget) < attackRange)
+        {
+            playerController.TakeDamage(1);
+            yield return StartCoroutine(StunPlayer());
+        }
+        else
+        {
+            isStunned = true;
+            currentStunTime = stunDuration;
+        }
+
+        isAttacking = false;
+        isOnCooldown = true;
+        currentCooldownTime = cooldownDuration;
+        SetVisibility(false);
+        yield return new WaitForSeconds(cooldownDuration);
+        isOnCooldown = false;
     }
 
     private Vector3 GetRandomAttackPosition()
     {
         Vector3 playerPos = playerController.transform.position;
-        Vector3 randomDirection = Random.insideUnitSphere * Random.Range(minAttackDistance, maxAttackDistance);
-        randomDirection.y = 0;
-        Vector3 targetPosition = playerPos + randomDirection;
+        Vector3 offset = Random.insideUnitSphere * Random.Range(minAttackDistance, maxAttackDistance);
+        offset.y = 0;
+        Vector3 desiredPos = playerPos + offset;
 
-        NavMeshHit hit;
-        if (NavMesh.SamplePosition(targetPosition, out hit, maxAttackDistance, NavMesh.AllAreas))
-        {
+        if (NavMesh.SamplePosition(desiredPos, out NavMeshHit hit, maxAttackDistance, NavMesh.AllAreas))
             return hit.position;
-        }
 
-        return playerPos + randomDirection.normalized * minAttackDistance;
-    }
-
-    private IEnumerator PerformAttack()
-    {
-        isAttacking = true;
-        Vector3 playerPosition = playerController.transform.position;
-        attackTarget = playerPosition;
-        
-        if (attackSound != null)
-        {
-            audioSource.PlayOneShot(attackSound);
-        }
-
-        // Запускаем анимацию атаки
-        if (animator != null)
-        {
-            animator.SetBool(WalkHash, false);
-            animator.SetBool(IdleHash, false);
-            animator.SetTrigger(AttackHash);
-        }
-
-        Vector3 startPosition = transform.position;
-        float attackProgress = 0f;
-
-        while (attackProgress < 1f)
-        {
-            attackProgress += Time.deltaTime * attackSpeed;
-            transform.position = Vector3.Lerp(startPosition, attackTarget, attackProgress);
-            yield return null;
-        }
-
-        // Проверяем, попал ли призрак в игрока
-        if (Vector3.Distance(transform.position, playerPosition) < attackRange)
-        {
-            if (playerController != null)
-            {
-                playerController.TakeDamage(1);
-                StartCoroutine(StunPlayer());
-            }
-        }
-
-        isAttacking = false;
-        isStunned = true;
-        currentStunTime = stunDuration;
+        return playerPos + offset.normalized * minAttackDistance;
     }
 
     private IEnumerator StunPlayer()
     {
-        if (playerController != null)
-        {
-            playerController.enabled = false; // Отключаем управление
-            yield return new WaitForSeconds(playerStunDuration);
-            playerController.enabled = true; // Включаем управление обратно
-        }
+        playerController.enabled = false;
+        yield return new WaitForSeconds(playerStunDuration);
+        playerController.enabled = true;
     }
 
     private void HandleStun()
@@ -441,19 +274,26 @@ private void CheckForIncense()
         if (currentCooldownTime <= 0)
         {
             isOnCooldown = false;
-            // Выбираем новую точку появления
-            Vector3 randomDirection = Random.insideUnitSphere * patrolRadius;
-            randomDirection.y = 0;
-            transform.position = spawnPoint + randomDirection;
+            transform.position = spawnPoint + Random.insideUnitSphere * patrolRadius;
         }
     }
 
     private void SetVisibility(bool visible)
     {
-        Renderer[] renderers = GetComponentsInChildren<Renderer>();
-        foreach (Renderer renderer in renderers)
+        foreach (Renderer r in GetComponentsInChildren<Renderer>())
         {
-            renderer.enabled = visible;
+            r.enabled = visible;
+        }
+        isVisible = visible;
+    }
+
+    private void HandleFootsteps()
+    {
+        if (isMoving && Time.time - lastFootstepTime >= footstepInterval && footstepSounds.Length > 0)
+        {
+            AudioClip clip = footstepSounds[Random.Range(0, footstepSounds.Length)];
+            audioSource.PlayOneShot(clip);
+            lastFootstepTime = Time.time;
         }
     }
 
@@ -465,25 +305,17 @@ private void CheckForIncense()
 
     private void OnDrawGizmosSelected()
     {
-        // Отрисовка радиуса патрулирования
         Gizmos.color = Color.yellow;
         Gizmos.DrawWireSphere(transform.position, patrolRadius);
 
-        // Отрисовка радиуса обнаружения благовоний
         Gizmos.color = Color.red;
         Gizmos.DrawWireSphere(transform.position, detectionRadius);
 
-        // Отрисовка точек появления
         if (spawnPoints != null)
         {
             Gizmos.color = Color.blue;
             foreach (Transform point in spawnPoints)
-            {
-                if (point != null)
-                {
-                    Gizmos.DrawSphere(point.position, 0.5f);
-                }
-            }
+                if (point) Gizmos.DrawSphere(point.position, 0.5f);
         }
     }
-} 
+}
