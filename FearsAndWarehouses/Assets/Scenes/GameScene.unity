@@ -27195,6 +27195,11 @@ Transform:
   m_CorrespondingSourceObject: {fileID: 8240169095854549620, guid: e2065e8f29774454889634d57ec0a96f, type: 3}
   m_PrefabInstance: {fileID: 714100908}
   m_PrefabAsset: {fileID: 0}
+--- !u!137 &718282517 stripped
+SkinnedMeshRenderer:
+  m_CorrespondingSourceObject: {fileID: -8466698465027105032, guid: 5004f587cf579864c97cc5c9ea6ee97d, type: 3}
+  m_PrefabInstance: {fileID: 2066819722}
+  m_PrefabAsset: {fileID: 0}
 --- !u!64 &718602299
 MeshCollider:
   m_ObjectHideFlags: 0
@@ -87976,14 +87981,20 @@ MonoBehaviour:
   stunDuration: 15
   cooldownDuration: 20
   playerStunDuration: 3
-  detectionRadius: 5.58
   minAttackDistance: 3
   maxAttackDistance: 8
-  footstepSounds: []
-  attackSound: {fileID: 0}
-  audioSource: {fileID: 0}
-  spawnPoints: []
+  footstepSounds:
+  - {fileID: 8300000, guid: 70299bcbe85d80d4c8139d8576b562b2, type: 3}
+  attackSound: {fileID: 8300000, guid: ac6457fc919c1db47bbcdcc1a22b54c2, type: 3}
+  audioSource: {fileID: 2066819724}
+  spawnPoints:
+  - {fileID: 1476201931}
+  - {fileID: 1208007336}
+  - {fileID: 2089736095}
   initialSpawnDelay: 15
+  weaponParent: {fileID: 1950794869}
+  ghostRenderer: {fileID: 718282517}
+  detectionRadius: 5.58
 --- !u!195 &2066819726
 NavMeshAgent:
   m_ObjectHideFlags: 0

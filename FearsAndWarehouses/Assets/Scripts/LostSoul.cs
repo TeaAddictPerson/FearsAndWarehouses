@@ -14,7 +14,6 @@ public class LostSoul : MonoBehaviour
     public float stunDuration = 15f;
     public float cooldownDuration = 20f;
     public float playerStunDuration = 3f;
-    public float detectionRadius = 5f; // Радиус обнаружения благовоний
     public float minAttackDistance = 3f; // Минимальная дистанция для атаки
     public float maxAttackDistance = 8f; // Максимальная дистанция для атаки
     public AudioClip[] footstepSounds;
@@ -47,6 +46,8 @@ public class LostSoul : MonoBehaviour
     private NavMeshAgent agent;
     private bool isMoving = false;
     private bool isAggressive = false;
+
+
 
     private void Start()
     {
@@ -236,77 +237,69 @@ public class LostSoul : MonoBehaviour
         }
     }
 
-    private void CheckForIncense()
+   [SerializeField] private Transform weaponParent;
+[SerializeField] private SkinnedMeshRenderer ghostRenderer; // или Renderer/MeshRenderer — зависит от модели
+[SerializeField] private float detectionRadius = 5f;
+
+private void CheckForIncense()
+{
+    if (playerController == null || weaponParent == null)
     {
-        Debug.Log("LostSoul: Начало проверки благовоний");
-        
-        if (playerEquipWeapon != null)
+        Debug.LogWarning("LostSoul: playerController или weaponParent не назначены.");
+        return;
+    }
+
+    bool incenseDetected = false;
+
+    foreach (Transform child in weaponParent)
+    {
+        if (child.CompareTag("Incense"))
         {
-            Debug.Log($"LostSoul: EquipWeapon найден, IsEquipped: {playerEquipWeapon.IsEquipped}");
-            
-            if (playerEquipWeapon.IsEquipped)
+            float distanceToPlayer = Vector3.Distance(transform.position, playerController.transform.position);
+            if (distanceToPlayer <= detectionRadius)
             {
-                if (playerEquipWeapon.item != null)
-                {
-                    Debug.Log($"LostSoul: Предмет в руке: {playerEquipWeapon.item.name}");
-                    
-                    Incense incense = playerEquipWeapon.item.GetComponent<Incense>();
-                    if (incense != null)
-                    {
-                        Debug.Log($"LostSoul: Компонент Incense найден, IsActive: {incense.IsEquipped}");
-                        
-                        float distanceToPlayer = Vector3.Distance(transform.position, playerController.transform.position);
-                        Debug.Log($"LostSoul: Дистанция до игрока: {distanceToPlayer}, Радиус обнаружения: {detectionRadius}");
-                        
-                        if (distanceToPlayer <= detectionRadius)
-                        {
-                            if (incense.IsEquipped)
-                            {
-                                Debug.Log($"LostSoul: Обнаружены активные благовония на дистанции {distanceToPlayer}");
-                                isAggressive = true;
-                                agent.enabled = false; // Отключаем NavMeshAgent
-                                StartCoroutine(AttackRoutine());
-                            }
-                            else
-                            {
-                                Debug.Log($"LostSoul: Благовония в руке, но не активны. Дистанция: {distanceToPlayer}");
-                                isAggressive = false;
-                                if (!isAttacking && !isStunned && !isOnCooldown)
-                                {
-                                    agent.enabled = true;
-                                }
-                            }
-                        }
-                        else
-                        {
-                            Debug.Log($"LostSoul: Игрок вне радиуса обнаружения");
-                        }
-                    }
-                    else
-                    {
-                        Debug.Log("LostSoul: Предмет в руке не является благовониями");
-                    }
-                }
-                else
-                {
-                    Debug.Log("LostSoul: Предмет в руке отсутствует");
-                }
+                Debug.Log($"LostSoul: Обнаружены благовония '{child.name}' на дистанции {distanceToPlayer}");
+                incenseDetected = true;
+                break;
             }
             else
             {
-                Debug.Log("LostSoul: Предмет не экипирован");
+                Debug.Log($"LostSoul: Благовония вне зоны действия. Дистанция: {distanceToPlayer}");
             }
         }
-        else
-        {
-            Debug.Log("LostSoul: EquipWeapon не найден");
-        }
+    }
 
-        if (!isAggressive && !isAttacking && !isStunned && !isOnCooldown)
+    if (incenseDetected)
+    {
+        if (!isAggressive)
+        {
+            isAggressive = true;
+
+            // Призрак становится видимым
+            if (ghostRenderer != null)
+                ghostRenderer.enabled = true;
+
+            // Отключаем NavMeshAgent
+            agent.enabled = false;
+
+            // Запускаем атаку
+            StartCoroutine(AttackRoutine());
+        }
+    }
+    else
+    {
+        isAggressive = false;
+
+        // Призрак становится невидимым
+        if (ghostRenderer != null)
+            ghostRenderer.enabled = false;
+
+        if (!isAttacking && !isStunned && !isOnCooldown)
         {
             agent.enabled = true;
         }
     }
+}
 
     private IEnumerator AttackRoutine()
     {
