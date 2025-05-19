@@ -6,6 +6,7 @@ TagManager:
   tags:
   - Phantom
   - Dust
+  - Incense
   layers:
   - Default
   - TransparentFX

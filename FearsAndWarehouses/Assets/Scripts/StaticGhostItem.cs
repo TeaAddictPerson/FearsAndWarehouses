@@ -2,43 +2,36 @@ using UnityEngine;
 
 public class StaticGhostItem : MonoBehaviour
 {
-    [Header("Основные настройки")]
-    public float useRange = 2f; // Дальность использования предмета
+    protected virtual void StartUsing() { }
+    protected virtual void ContinueUsing() { }
+    protected virtual void StopUsing() { }
 
-    protected bool isUsing = false;
+protected virtual bool IsItemEquipped()
+{
+    var equipWeapon = GetComponentInParent<EquipWeapon>();
+    return equipWeapon != null && equipWeapon.IsEquipped;
+}
 
-    protected virtual void Update()
+
+
+    void Update()
     {
+        if (!IsItemEquipped())
+            return;
+
+        if (Input.GetKeyDown(KeyCode.E))
+        {
+            StartUsing();
+        }
+
         if (Input.GetKey(KeyCode.E))
         {
-            if (!isUsing)
-            {
-                StartUsing();
-            }
             ContinueUsing();
         }
-        else if (isUsing)
+
+        if (Input.GetKeyUp(KeyCode.E))
         {
             StopUsing();
         }
-    }
-
-    protected virtual void StartUsing()
-    {
-        isUsing = true;
-    }
-
-    protected virtual void ContinueUsing()
-    {
-    }
-
-    protected virtual void StopUsing()
-    {
-        isUsing = false;
-    }
-
-    protected bool IsInRange(Transform target)
-    {
-        return Vector3.Distance(transform.position, target.position) <= useRange;
     }
 }

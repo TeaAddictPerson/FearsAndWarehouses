@@ -22722,11 +22722,6 @@ Transform:
   m_CorrespondingSourceObject: {fileID: 2908606921099238181, guid: 007c0bdda73b6d84da497cc72ccc3f85, type: 3}
   m_PrefabInstance: {fileID: 1938254631}
   m_PrefabAsset: {fileID: 0}
---- !u!198 &608631763 stripped
-ParticleSystem:
-  m_CorrespondingSourceObject: {fileID: 4149652726339881899, guid: 007c0bdda73b6d84da497cc72ccc3f85, type: 3}
-  m_PrefabInstance: {fileID: 1938254631}
-  m_PrefabAsset: {fileID: 0}
 --- !u!64 &611118245
 MeshCollider:
   m_ObjectHideFlags: 0
@@ -22968,11 +22963,6 @@ PrefabInstance:
 --- !u!4 &619268267 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 2908606921099238181, guid: 007c0bdda73b6d84da497cc72ccc3f85, type: 3}
-  m_PrefabInstance: {fileID: 619268266}
-  m_PrefabAsset: {fileID: 0}
---- !u!198 &619268268 stripped
-ParticleSystem:
-  m_CorrespondingSourceObject: {fileID: 4149652726339881899, guid: 007c0bdda73b6d84da497cc72ccc3f85, type: 3}
   m_PrefabInstance: {fileID: 619268266}
   m_PrefabAsset: {fileID: 0}
 --- !u!1001 &619567357
@@ -33499,11 +33489,6 @@ Transform:
   m_CorrespondingSourceObject: {fileID: 2908606921099238181, guid: 007c0bdda73b6d84da497cc72ccc3f85, type: 3}
   m_PrefabInstance: {fileID: 882645352}
   m_PrefabAsset: {fileID: 0}
---- !u!198 &882645354 stripped
-ParticleSystem:
-  m_CorrespondingSourceObject: {fileID: 4149652726339881899, guid: 007c0bdda73b6d84da497cc72ccc3f85, type: 3}
-  m_PrefabInstance: {fileID: 882645352}
-  m_PrefabAsset: {fileID: 0}
 --- !u!1001 &882812661
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -42002,8 +41987,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: b338a6d89f65a9f40b83f98b1a4aede3, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  useRange: 2
-  incenseParticle: {fileID: 608631763}
+  isEquipped: 0
 --- !u!1001 &1069384779
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -51146,8 +51130,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: b338a6d89f65a9f40b83f98b1a4aede3, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  useRange: 2
-  incenseParticle: {fileID: 619268268}
+  isEquipped: 0
 --- !u!65 &1293077762
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -58996,20 +58979,6 @@ Transform:
   m_CorrespondingSourceObject: {fileID: 2137195129188807160, guid: 4f019145598ea474b899ca25a03acd09, type: 3}
   m_PrefabInstance: {fileID: 1478690653}
   m_PrefabAsset: {fileID: 0}
---- !u!114 &1482918052
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1922222535}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: b338a6d89f65a9f40b83f98b1a4aede3, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  useRange: 2
-  incenseParticle: {fileID: 882645354}
 --- !u!65 &1482918053
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -61543,7 +61512,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 011c11bbf9e7adc469eb96bc1e553e48, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  useRange: 2
   holyWaterParticle: {fileID: 744576766}
 --- !u!1001 &1528126898
 PrefabInstance:
@@ -74137,7 +74105,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 011c11bbf9e7adc469eb96bc1e553e48, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  useRange: 2
   holyWaterParticle: {fileID: 298262405}
 --- !u!114 &1845607319
 MonoBehaviour:
@@ -77134,6 +77101,14 @@ PrefabInstance:
       propertyPath: m_Name
       value: Aromatic incense sticks (4)
       objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: 309cae2412302454bb46a6f07e765374, type: 3}
+      propertyPath: m_TagString
+      value: Incense
+      objectReference: {fileID: 0}
+    - target: {fileID: 8487167654232718067, guid: 309cae2412302454bb46a6f07e765374, type: 3}
+      propertyPath: m_TagString
+      value: Incense
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects:
@@ -77150,9 +77125,6 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: 309cae2412302454bb46a6f07e765374, type: 3}
       insertIndex: -1
       addedObject: {fileID: 1482918053}
-    - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: 309cae2412302454bb46a6f07e765374, type: 3}
-      insertIndex: -1
-      addedObject: {fileID: 1482918052}
     - targetCorrespondingSourceObject: {fileID: 8487167654232718067, guid: 309cae2412302454bb46a6f07e765374, type: 3}
       insertIndex: -1
       addedObject: {fileID: 1922222541}
@@ -77162,6 +77134,9 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: 8487167654232718067, guid: 309cae2412302454bb46a6f07e765374, type: 3}
       insertIndex: -1
       addedObject: {fileID: 1922222539}
+    - targetCorrespondingSourceObject: {fileID: 8487167654232718067, guid: 309cae2412302454bb46a6f07e765374, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 1922222547}
     - targetCorrespondingSourceObject: {fileID: -1014268425052216762, guid: 309cae2412302454bb46a6f07e765374, type: 3}
       insertIndex: -1
       addedObject: {fileID: 674838369}
@@ -77925,6 +77900,19 @@ Rigidbody:
   m_Interpolate: 0
   m_Constraints: 72
   m_CollisionDetection: 0
+--- !u!114 &1922222547
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1922222534}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b338a6d89f65a9f40b83f98b1a4aede3, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  isEquipped: 0
 --- !u!1001 &1922506999
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -87085,7 +87073,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 011c11bbf9e7adc469eb96bc1e553e48, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  useRange: 2
   holyWaterParticle: {fileID: 263793474}
 --- !u!114 &2055251771
 MonoBehaviour:
@@ -87882,8 +87869,8 @@ AudioSource:
   m_Enabled: 1
   serializedVersion: 4
   OutputAudioMixerGroup: {fileID: 0}
-  m_audioClip: {fileID: 0}
-  m_Resource: {fileID: 0}
+  m_audioClip: {fileID: 8300000, guid: 70299bcbe85d80d4c8139d8576b562b2, type: 3}
+  m_Resource: {fileID: 8300000, guid: 70299bcbe85d80d4c8139d8576b562b2, type: 3}
   m_PlayOnAwake: 1
   m_Volume: 1
   m_Pitch: 1
@@ -87992,14 +87979,10 @@ MonoBehaviour:
   detectionRadius: 5.58
   minAttackDistance: 3
   maxAttackDistance: 8
-  footstepSounds:
-  - {fileID: 8300000, guid: 70299bcbe85d80d4c8139d8576b562b2, type: 3}
-  attackSound: {fileID: 8300000, guid: ac6457fc919c1db47bbcdcc1a22b54c2, type: 3}
-  audioSource: {fileID: 2066819724}
-  spawnPoints:
-  - {fileID: 1476201931}
-  - {fileID: 1208007336}
-  - {fileID: 2089736095}
+  footstepSounds: []
+  attackSound: {fileID: 0}
+  audioSource: {fileID: 0}
+  spawnPoints: []
   initialSpawnDelay: 15
 --- !u!195 &2066819726
 NavMeshAgent:

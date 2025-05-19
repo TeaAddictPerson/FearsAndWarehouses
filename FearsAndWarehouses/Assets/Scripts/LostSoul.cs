@@ -253,14 +253,14 @@ public class LostSoul : MonoBehaviour
                     Incense incense = playerEquipWeapon.item.GetComponent<Incense>();
                     if (incense != null)
                     {
-                        Debug.Log($"LostSoul: Компонент Incense найден, IsActive: {incense.IsActive}");
+                        Debug.Log($"LostSoul: Компонент Incense найден, IsActive: {incense.IsEquipped}");
                         
                         float distanceToPlayer = Vector3.Distance(transform.position, playerController.transform.position);
                         Debug.Log($"LostSoul: Дистанция до игрока: {distanceToPlayer}, Радиус обнаружения: {detectionRadius}");
                         
                         if (distanceToPlayer <= detectionRadius)
                         {
-                            if (incense.IsActive)
+                            if (incense.IsEquipped)
                             {
                                 Debug.Log($"LostSoul: Обнаружены активные благовония на дистанции {distanceToPlayer}");
                                 isAggressive = true;
@@ -317,7 +317,7 @@ public class LostSoul : MonoBehaviour
                 playerEquipWeapon.item != null)
             {
                 Incense incense = playerEquipWeapon.item.GetComponent<Incense>();
-                if (incense != null && incense.IsActive)
+                if (incense != null && incense.IsEquipped)
                 {
                     // Выбираем точку появления рядом с игроком
                     Vector3 attackPosition = GetRandomAttackPosition();

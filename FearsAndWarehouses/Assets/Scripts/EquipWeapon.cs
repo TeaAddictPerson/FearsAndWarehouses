@@ -17,7 +17,6 @@ public class EquipWeapon : MonoBehaviour
             itemRb = item.GetComponent<Rigidbody>();
             itemCollider = item.GetComponent<MeshCollider>();
 
-
             itemRb.isKinematic = false;
             itemCollider.enabled = true;
             item.transform.SetParent(null);
@@ -43,6 +42,15 @@ public class EquipWeapon : MonoBehaviour
             item.transform.eulerAngles = new Vector3(0f, transform.eulerAngles.y, 0f);
             itemRb.isKinematic = false;
             itemCollider.enabled = true;
+
+            // ⬇ Обновляем состояние Incense
+            Incense incense = item.GetComponent<Incense>();
+            if (incense != null)
+            {
+                incense.SetEquippedState(false);
+            }
+
+            Debug.Log($"EquipWeapon: Бросил предмет {item.name}");
         }
     }
 
@@ -59,6 +67,15 @@ public class EquipWeapon : MonoBehaviour
             item.transform.position = WeaponParent.position;
             item.transform.rotation = WeaponParent.rotation;
             item.transform.SetParent(WeaponParent);
+
+            // ⬇ Обновляем состояние Incense
+            Incense incense = item.GetComponent<Incense>();
+            if (incense != null)
+            {
+                incense.SetEquippedState(true);
+            }
+
+            Debug.Log($"EquipWeapon: Поднял предмет {item.name}");
         }
     }
 
@@ -72,6 +89,6 @@ public class EquipWeapon : MonoBehaviour
             }
         }
     }
-    
+
     public bool IsEquipped => isEquipped;
 }
