@@ -87877,8 +87877,8 @@ AudioSource:
   m_Enabled: 1
   serializedVersion: 4
   OutputAudioMixerGroup: {fileID: 0}
-  m_audioClip: {fileID: 8300000, guid: 70299bcbe85d80d4c8139d8576b562b2, type: 3}
-  m_Resource: {fileID: 8300000, guid: 70299bcbe85d80d4c8139d8576b562b2, type: 3}
+  m_audioClip: {fileID: 0}
+  m_Resource: {fileID: 0}
   m_PlayOnAwake: 1
   m_Volume: 1
   m_Pitch: 1
@@ -87978,13 +87978,13 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   moveSpeed: 3
   patrolRadius: 10
-  attackRange: 2
+  attackRange: 3
   attackSpeed: 10
   stunDuration: 15
   cooldownDuration: 20
   playerStunDuration: 3
-  minAttackDistance: 3
-  maxAttackDistance: 8
+  minAttackDistance: 5
+  maxAttackDistance: 10
   footstepSounds:
   - {fileID: 8300000, guid: 70299bcbe85d80d4c8139d8576b562b2, type: 3}
   attackSound: {fileID: 8300000, guid: ac6457fc919c1db47bbcdcc1a22b54c2, type: 3}

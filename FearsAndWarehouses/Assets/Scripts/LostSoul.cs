@@ -7,7 +7,7 @@ public class LostSoul : MonoBehaviour
     [Header("Настройки заблудшей души")]
     public float moveSpeed = 3f;
     public float patrolRadius = 10f;
-    public float attackRange = 2f;
+    public float attackRange = 1.2f;
     public float attackSpeed = 10f;
     public float stunDuration = 15f;
     public float cooldownDuration = 20f;
@@ -39,7 +39,7 @@ public class LostSoul : MonoBehaviour
     [SerializeField] private Transform weaponParent;
     [SerializeField] private SkinnedMeshRenderer ghostRenderer;
     [SerializeField] private float detectionRadius = 5f;
-    [SerializeField] private float footstepInterval = 0.5f;
+    [SerializeField] private float footstepInterval = 0.8f;
 
     private EquipWeapon playerEquipWeapon;
     private FirstPersonController playerController;
@@ -118,15 +118,15 @@ public class LostSoul : MonoBehaviour
         if (!hasReactedToIncense)
             CheckForIncense();
 
-        if (isAggressive && !isAttacking && !isStunned && !isOnCooldown)
+        if (isAggressive && !isAttacking && !isStunned && !isOnCooldown && !isPreparingAttack && agent.remainingDistance <= attackRange)
         {
             StartCoroutine(AttackRoutine());
         }
 
+
         if (!isAggressive && !isAttacking && !isStunned && !isOnCooldown)
         {
             Patrol();
-
             isMoving = agent.velocity.magnitude > 0.1f;
             HandleFootsteps();
 
@@ -165,7 +165,7 @@ public class LostSoul : MonoBehaviour
 
     private void CheckForIncense()
     {
-        if (!playerController || !weaponParent) return;
+        if (!playerController || !weaponParent || hasReactedToIncense) return;
 
         foreach (Transform child in weaponParent)
         {
@@ -175,77 +175,178 @@ public class LostSoul : MonoBehaviour
                 hasReactedToIncense = true;
                 isAggressive = true;
                 SetVisibility(true);
-                agent.enabled = false;
+                StartCoroutine(PrepareAttackRoutine());
                 break;
             }
         }
     }
 
+    private bool isPreparingAttack = false;
+
+    private IEnumerator PrepareAttackRoutine()
+    {
+        isPreparingAttack = true;
+        isAggressive = true;
+
+        // Позиция игрока
+        Vector3 playerPos = playerController.transform.position;
+        Vector3 teleportPos = GetRandomAttackPosition();
+
+        if (!NavMesh.SamplePosition(teleportPos, out NavMeshHit hit, 2f, NavMesh.AllAreas))
+        {
+            Debug.LogWarning("Не удалось найти позицию рядом с игроком");
+            isPreparingAttack = false;
+            yield break;
+        }
+
+        // Телепортируем призрака
+        agent.Warp(hit.position);
+        SetVisibility(true);
+        yield return new WaitForSeconds(0.2f);
+
+        if (agent.isOnNavMesh)
+        {
+            agent.isStopped = false;
+            agent.speed = attackSpeed;
+
+            // Включаем бег
+            if (animator)
+            {
+                animator.SetBool(RunHash, true);
+                animator.SetBool(WalkHash, false);
+                animator.SetBool(IdleHash, false);
+            }
+
+            float chaseTime = 0f;
+            float maxChaseTime = 5f; // Максимальное время преследования
+
+            // Гонимся за игроком, пока не окажемся в радиусе атаки или не истечет время
+            while (Vector3.Distance(transform.position, playerController.transform.position) > attackRange && chaseTime < maxChaseTime)
+            {
+                Vector3 directionToPlayer = (playerController.transform.position - transform.position).normalized;
+                Vector3 targetPosition = playerController.transform.position - directionToPlayer * attackRange;
+                agent.SetDestination(targetPosition);
+
+                isMoving = true;
+                HandleFootsteps();
+
+                chaseTime += Time.deltaTime;
+                yield return null;
+            }
+
+            agent.ResetPath();
+            agent.isStopped = true;
+
+            // Если время истекло, считаем это уворотом
+            if (chaseTime >= maxChaseTime)
+            {
+                isStunned = true;
+                currentStunTime = stunDuration;
+                isPreparingAttack = false;
+                isMoving = false;
+
+                // Принудительно включаем Idle анимацию
+                if (animator)
+                {
+                    animator.Play("Idle");
+                }
+
+                // Ждем время оглушения
+                yield return new WaitForSeconds(stunDuration);
+                
+                isStunned = false;
+                
+                // После оглушения продолжаем атаковать
+                if (hasReactedToIncense)
+                {
+                    StartCoroutine(PrepareAttackRoutine());
+                }
+                yield break;
+            }
+        }
+
+        isPreparingAttack = false;
+        StartCoroutine(AttackRoutine());
+    }
+
+
+
     private IEnumerator AttackRoutine()
     {
         isAttacking = true;
 
-        yield return new WaitForSeconds(0.5f);
-
-        Vector3 attackPos = GetRandomAttackPosition();
-        transform.position = attackPos;
-        SetVisibility(true); // Призрак становится видим при атаке
-
-        Vector3 dirToPlayer = (playerController.transform.position - transform.position).normalized;
-        transform.rotation = Quaternion.LookRotation(dirToPlayer);
+        if (agent.isOnNavMesh)
+        {
+            agent.isStopped = true;
+            agent.ResetPath();
+        }
 
         if (animator)
         {
-            animator.SetBool(WalkHash, false);
-            animator.SetBool(IdleHash, false);
-            animator.SetBool(RunHash, true);
+            animator.SetBool(RunHash, false);
             animator.SetTrigger(AttackHash);
         }
 
-        if (attackSound != null) audioSource.PlayOneShot(attackSound);
-
-        attackTarget = playerController.transform.position;
-        agent.enabled = true;
-        agent.SetDestination(attackTarget);
-
-        while (agent.remainingDistance > attackRange && !agent.pathPending)
+        if (attackSound)
         {
-            yield return null;
+            audioSource.pitch = 1f;
+            audioSource.PlayOneShot(attackSound);
         }
 
-        agent.isStopped = true;
-        agent.enabled = false;
+        yield return new WaitForSeconds(1.2f);
 
-        if (Vector3.Distance(transform.position, attackTarget) < attackRange)
+        float distToPlayer = Vector3.Distance(transform.position, playerController.transform.position);
+
+        if (distToPlayer <= attackRange)
         {
+            // Успешная атака
             playerController.TakeDamage(1);
             yield return StartCoroutine(StunPlayer());
+            
+            // Скрываем призрака на 20 секунд
+            SetVisibility(false);
+            yield return new WaitForSeconds(20f);
+            
+            // Повторяем атаку
+            if (hasReactedToIncense)
+            {
+                StartCoroutine(PrepareAttackRoutine());
+            }
         }
         else
         {
+            // Неуспешная атака
             isStunned = true;
             currentStunTime = stunDuration;
+            
+            if (animator)
+            {
+                animator.SetBool(IdleHash, true);
+                animator.SetBool(WalkHash, false);
+                animator.SetBool(RunHash, false);
+            }
         }
 
         isAttacking = false;
-        isOnCooldown = true;
-        currentCooldownTime = cooldownDuration;
-        SetVisibility(false);
-        yield return new WaitForSeconds(cooldownDuration);
-        isOnCooldown = false;
+        isMoving = false;
     }
 
     private Vector3 GetRandomAttackPosition()
     {
         Vector3 playerPos = playerController.transform.position;
-        Vector3 offset = Random.insideUnitSphere * Random.Range(minAttackDistance, maxAttackDistance);
-        offset.y = 0;
-        Vector3 desiredPos = playerPos + offset;
 
-        if (NavMesh.SamplePosition(desiredPos, out NavMeshHit hit, maxAttackDistance, NavMesh.AllAreas))
-            return hit.position;
+        for (int i = 0; i < 10; i++)
+        {
+            Vector3 offsetDir = Random.onUnitSphere;
+            offsetDir.y = 0;
+            float distance = Random.Range(minAttackDistance, maxAttackDistance);
+            Vector3 candidate = playerPos + offsetDir.normalized * distance;
 
-        return playerPos + offset.normalized * minAttackDistance;
+            if (NavMesh.SamplePosition(candidate, out NavMeshHit hit, 2f, NavMesh.AllAreas))
+                return hit.position;
+        }
+
+        return playerPos - playerController.transform.forward * maxAttackDistance;
     }
 
     private IEnumerator StunPlayer()
@@ -263,8 +364,9 @@ public class LostSoul : MonoBehaviour
             isStunned = false;
             isOnCooldown = true;
             currentCooldownTime = cooldownDuration;
-            SetVisibility(false);
-            isVisible = false;
+
+            if (!hasReactedToIncense)
+                SetVisibility(false);
         }
     }
 
@@ -289,11 +391,16 @@ public class LostSoul : MonoBehaviour
 
     private void HandleFootsteps()
     {
-        if (isMoving && Time.time - lastFootstepTime >= footstepInterval && footstepSounds.Length > 0)
+        if (isMoving && agent.isOnNavMesh && agent.velocity.magnitude > 0.1f &&
+            Time.time - lastFootstepTime >= footstepInterval && footstepSounds.Length > 0)
         {
-            AudioClip clip = footstepSounds[Random.Range(0, footstepSounds.Length)];
-            audioSource.PlayOneShot(clip);
-            lastFootstepTime = Time.time;
+            if (!audioSource.isPlaying)
+            {
+                AudioClip clip = footstepSounds[Random.Range(0, footstepSounds.Length)];
+                audioSource.pitch = 1f;
+                audioSource.PlayOneShot(clip, 1f);
+                lastFootstepTime = Time.time;
+            }
         }
     }
 
