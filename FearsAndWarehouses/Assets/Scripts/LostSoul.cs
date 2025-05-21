@@ -1,6 +1,7 @@
 using UnityEngine;
 using System.Collections;
 using UnityEngine.AI;
+using UnityEngine.UI;
 
 public class LostSoul : MonoBehaviour
 {
@@ -17,6 +18,10 @@ public class LostSoul : MonoBehaviour
     public AudioClip[] footstepSounds;
     public AudioClip attackSound;
     public AudioSource audioSource;
+    public Image bloodOverlay; // Изображение крови на экране
+    public float bloodFadeDuration = 1f; // Длительность появления/исчезновения крови
+    public float bloodDisplayDuration = 5f; // Время отображения крови
+    public ParticleSystem deathParticles; // Партиклы смерти призрака
 
     [Header("Точки появления")]
     public Transform[] spawnPoints;
@@ -31,10 +36,11 @@ public class LostSoul : MonoBehaviour
 
     private NavMeshAgent agent;
     private Vector3 spawnPoint;
-    private bool isVisible, isAttacking, isStunned, isOnCooldown, isMoving, isAggressive, isActive, isInitialized;
+    private bool isVisible, isAttacking, isOnCooldown, isMoving, isAggressive, isActive, isInitialized;
     private bool hasReactedToIncense = false;
     private float lastFootstepTime, currentCooldownTime, currentStunTime;
     private Vector3 attackTarget;
+    public bool isStunned { get; private set; }
 
     [SerializeField] private Transform weaponParent;
     [SerializeField] private SkinnedMeshRenderer ghostRenderer;
@@ -202,7 +208,19 @@ public class LostSoul : MonoBehaviour
         // Телепортируем призрака
         agent.Warp(hit.position);
         SetVisibility(true);
-        yield return new WaitForSeconds(0.2f);
+
+        // Проигрываем звук рычания при появлении
+        if (attackSound && audioSource)
+        {
+            audioSource.pitch = 1f;
+            audioSource.Stop();
+            audioSource.PlayOneShot(attackSound);
+            yield return new WaitForSeconds(0.3f);
+        }
+        else
+        {
+            yield return new WaitForSeconds(0.2f);
+        }
 
         if (agent.isOnNavMesh)
         {
@@ -281,16 +299,20 @@ public class LostSoul : MonoBehaviour
             agent.ResetPath();
         }
 
+        // Сначала проигрываем звук
+        if (attackSound && audioSource)
+        {
+            audioSource.pitch = 1f;
+            audioSource.Stop(); // Останавливаем все текущие звуки
+            audioSource.PlayOneShot(attackSound);
+            yield return new WaitForSeconds(0.3f); // Ждем начала звука
+        }
+
+        // Затем запускаем анимацию
         if (animator)
         {
             animator.SetBool(RunHash, false);
             animator.SetTrigger(AttackHash);
-        }
-
-        if (attackSound)
-        {
-            audioSource.pitch = 1f;
-            audioSource.PlayOneShot(attackSound);
         }
 
         yield return new WaitForSeconds(1.2f);
@@ -301,6 +323,7 @@ public class LostSoul : MonoBehaviour
         {
             // Успешная атака
             playerController.TakeDamage(1);
+            StartCoroutine(ShowBloodEffect()); // Запускаем эффект крови
             yield return StartCoroutine(StunPlayer());
             
             // Скрываем призрака на 20 секунд
@@ -315,7 +338,7 @@ public class LostSoul : MonoBehaviour
         }
         else
         {
-            // Неуспешная атака
+            // Неуспешная атака - игрок увернулся
             isStunned = true;
             currentStunTime = stunDuration;
             
@@ -324,6 +347,26 @@ public class LostSoul : MonoBehaviour
                 animator.SetBool(IdleHash, true);
                 animator.SetBool(WalkHash, false);
                 animator.SetBool(RunHash, false);
+            }
+
+            // Останавливаем агента
+            if (agent.isOnNavMesh)
+            {
+                agent.isStopped = true;
+                agent.ResetPath();
+            }
+
+            // Ждем время оглушения
+            yield return new WaitForSeconds(stunDuration);
+            
+            isStunned = false;
+            isOnCooldown = true;
+            currentCooldownTime = cooldownDuration;
+            
+            // После оглушения и кулдауна продолжаем атаковать
+            if (hasReactedToIncense)
+            {
+                StartCoroutine(PrepareAttackRoutine());
             }
         }
 
@@ -410,6 +453,60 @@ public class LostSoul : MonoBehaviour
         SetVisibility(false);
     }
 
+    public void Exorcise()
+    {
+        if (!isStunned) return;
+
+        // Отключаем все компоненты
+        if (agent != null) agent.enabled = false;
+        if (audioSource != null) audioSource.enabled = false;
+        if (animator != null) animator.enabled = false;
+
+        // Отключаем коллайдеры
+        Collider[] colliders = GetComponents<Collider>();
+        foreach (Collider col in colliders)
+        {
+            col.enabled = false;
+        }
+
+        // Отключаем рендереры
+        Renderer[] renderers = GetComponentsInChildren<Renderer>();
+        foreach (Renderer renderer in renderers)
+        {
+            renderer.enabled = false;
+        }
+
+        // Находим и перемещаем партиклы пыли
+        GameObject dustParticles = GameObject.FindGameObjectWithTag("Dust");
+        if (dustParticles != null)
+        {
+            dustParticles.transform.position = transform.position + Vector3.up * 3f;
+            ParticleSystem dustSystem = dustParticles.GetComponent<ParticleSystem>();
+            if (dustSystem != null)
+            {
+                dustSystem.Play();
+                StartCoroutine(DestroyAfterParticles(dustSystem));
+            }
+            else
+            {
+                Destroy(gameObject);
+            }
+        }
+        else
+        {
+            Destroy(gameObject);
+        }
+    }
+
+    private IEnumerator DestroyAfterParticles(ParticleSystem particles)
+    {
+        if (particles != null)
+        {
+            yield return new WaitForSeconds(particles.main.duration);
+        }
+        Destroy(gameObject);
+    }
+
     private void OnDrawGizmosSelected()
     {
         Gizmos.color = Color.yellow;
@@ -424,5 +521,46 @@ public class LostSoul : MonoBehaviour
             foreach (Transform point in spawnPoints)
                 if (point) Gizmos.DrawSphere(point.position, 0.5f);
         }
+    }
+
+    private IEnumerator ShowBloodEffect()
+    {
+        if (bloodOverlay == null) yield break;
+
+        // Плавное появление
+        float elapsedTime = 0f;
+        Color startColor = bloodOverlay.color;
+        startColor.a = 0f;
+        Color targetColor = bloodOverlay.color;
+        targetColor.a = 0.4f; // Устанавливаем максимальную прозрачность на 0.4 (101/255)
+
+        bloodOverlay.gameObject.SetActive(true);
+        bloodOverlay.color = startColor;
+
+        while (elapsedTime < bloodFadeDuration)
+        {
+            elapsedTime += Time.deltaTime;
+            float alpha = Mathf.Lerp(0f, 0.4f, elapsedTime / bloodFadeDuration); // Плавно увеличиваем до 0.4
+            bloodOverlay.color = new Color(targetColor.r, targetColor.g, targetColor.b, alpha);
+            yield return null;
+        }
+
+        bloodOverlay.color = targetColor;
+
+        // Ждем время отображения
+        yield return new WaitForSeconds(bloodDisplayDuration);
+
+        // Плавное исчезновение
+        elapsedTime = 0f;
+        while (elapsedTime < bloodFadeDuration)
+        {
+            elapsedTime += Time.deltaTime;
+            float alpha = Mathf.Lerp(0.4f, 0f, elapsedTime / bloodFadeDuration); // Плавно уменьшаем от 0.4
+            bloodOverlay.color = new Color(targetColor.r, targetColor.g, targetColor.b, alpha);
+            yield return null;
+        }
+
+        bloodOverlay.color = startColor;
+        bloodOverlay.gameObject.SetActive(false);
     }
 }
