@@ -25,7 +25,7 @@ RenderSettings:
   m_AmbientGroundColor: {r: 0.047, g: 0.043, b: 0.035, a: 1}
   m_AmbientIntensity: 1
   m_AmbientMode: 0
-  m_SubtractiveShadowColor: {r: 0.24764152, g: 0.27030152, b: 0.3301887, a: 1}
+  m_SubtractiveShadowColor: {r: 0.3132075, g: 0.3132075, b: 0.3132075, a: 1}
   m_SkyboxMaterial: {fileID: 0}
   m_HaloStrength: 0.5
   m_FlareStrength: 1
@@ -27589,15 +27589,15 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: 77bda4c8728910e42a1526b5575e6c29, type: 3}
       propertyPath: m_LocalPosition.x
-      value: -1.4071522
+      value: -1.53
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: 77bda4c8728910e42a1526b5575e6c29, type: 3}
       propertyPath: m_LocalPosition.y
-      value: 0.098903656
+      value: 0.071
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: 77bda4c8728910e42a1526b5575e6c29, type: 3}
       propertyPath: m_LocalPosition.z
-      value: 0.756162
+      value: 0.756
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: 77bda4c8728910e42a1526b5575e6c29, type: 3}
       propertyPath: m_LocalRotation.w
@@ -27767,8 +27767,8 @@ BoxCollider:
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 3
-  m_Size: {x: 42.766857, y: 38.828922, z: 17.935}
-  m_Center: {x: -6.8576746, y: -1.3239107, z: 3.6896834}
+  m_Size: {x: 42.32956, y: 52.49318, z: 37.892956}
+  m_Center: {x: -6.639068, y: -8.156091, z: -16.656885}
 --- !u!64 &729792350
 MeshCollider:
   m_ObjectHideFlags: 0
@@ -59079,8 +59079,8 @@ BoxCollider:
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 3
-  m_Size: {x: 1.4024905, y: 1, z: 0.49540728}
-  m_Center: {x: -0.20124525, y: -0.000000019873072, z: 0.25229636}
+  m_Size: {x: 1.1385338, y: 1, z: 1.2080941}
+  m_Center: {x: -0.2330397, y: -0.00000012671474, z: -0.34355876}
 --- !u!114 &1482918054
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -60248,8 +60248,8 @@ BoxCollider:
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 3
-  m_Size: {x: 1, y: 1, z: 1}
-  m_Center: {x: 0, y: 0, z: 0}
+  m_Size: {x: 0.5523923, y: 0.8754184, z: 0.6924645}
+  m_Center: {x: -0.22380391, y: 0.062290795, z: -0.1537678}
 --- !u!65 &1510376119
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -71564,15 +71564,15 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: e96892894544d2845a518d4e3ab3ca97, type: 3}
       propertyPath: m_LocalPosition.x
-      value: -0.8391514
+      value: -0.97
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: e96892894544d2845a518d4e3ab3ca97, type: 3}
       propertyPath: m_LocalPosition.y
-      value: 0.22040558
+      value: 0.161
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: e96892894544d2845a518d4e3ab3ca97, type: 3}
       propertyPath: m_LocalPosition.z
-      value: 0.75482684
+      value: 0.755
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: e96892894544d2845a518d4e3ab3ca97, type: 3}
       propertyPath: m_LocalRotation.w
@@ -71742,8 +71742,8 @@ BoxCollider:
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 3
-  m_Size: {x: 0.35343426, y: 0.8570667, z: 0.20209852}
-  m_Center: {x: 0.009007715, y: -0.03582286, z: 0.08787214}
+  m_Size: {x: 0.60303175, y: 0.8570667, z: 0.6403468}
+  m_Center: {x: 0.1338072, y: -0.03582307, z: -0.2322337}
 --- !u!4 &1789621333 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 2392957519790415703, guid: 7705540c6efa0404da1edff4ca27d908, type: 3}
@@ -74273,8 +74273,8 @@ BoxCollider:
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 3
-  m_Size: {x: 0.14626607, y: 0.12751652, z: 0.058420163}
-  m_Center: {x: 0.040006727, y: -0.027374802, z: 0.019210314}
+  m_Size: {x: 0.19397314, y: 0.1456384, z: 0.20711353}
+  m_Center: {x: 0.06385865, y: -0.018313562, z: -0.055136237}
 --- !u!1 &1846820322
 GameObject:
   m_ObjectHideFlags: 0
