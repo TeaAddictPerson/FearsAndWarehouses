@@ -33,21 +33,43 @@ public class Cross : GhostItem
         Collider[] hits = Physics.OverlapSphere(transform.position, repulsionRadius);
         float coneAngle = 45f;
 
+        Debug.Log($"Cross: Проверка в радиусе {repulsionRadius}. Найдено объектов: {hits.Length}");
+
         foreach (var hit in hits)
         {
-            if (hit.CompareTag("Poltergeist"))
-            {
-                Vector3 directionToGhost = (hit.transform.position - weaponParent.position).normalized;
-                float angleToGhost = Vector3.Angle(weaponParent.forward, directionToGhost);
+            // Проверяем тег на основном объекте и его родителе
+            bool isPoltergeist = hit.CompareTag("Poltergeist") || 
+                                (hit.transform.parent != null && hit.transform.parent.CompareTag("Poltergeist"));
 
-                if (angleToGhost <= coneAngle)
+            if (isPoltergeist)
+            {
+                Debug.Log($"Cross: Найден полтергейст в радиусе. Объект: {hit.name}, Родитель: {hit.transform.parent?.name}");
+                
+                // Получаем компонент Poltergeist с родительского объекта, если он есть
+                Poltergeist ghost = hit.GetComponent<Poltergeist>();
+                if (ghost == null && hit.transform.parent != null)
                 {
-                    Poltergeist ghost = hit.GetComponent<Poltergeist>();
-                    if (ghost != null)
+                    ghost = hit.transform.parent.GetComponent<Poltergeist>();
+                }
+
+                if (ghost != null)
+                {
+                    Vector3 directionToGhost = (ghost.transform.position - weaponParent.position).normalized;
+                    float angleToGhost = Vector3.Angle(weaponParent.forward, directionToGhost);
+
+                    Debug.Log($"Cross: Угол до полтергейста: {angleToGhost}, максимальный угол: {coneAngle}");
+
+                    if (angleToGhost <= coneAngle)
                     {
+                        Debug.Log("Cross: Полтергейст в конусе, начинаем изгнание");
                         ghost.StartExorcism();
+                        Debug.Log("Cross: Изгнание начато");
                         break;
                     }
+                }
+                else
+                {
+                    Debug.LogError($"Cross: Компонент Poltergeist не найден на объекте {hit.name} или его родителе!");
                 }
             }
         }

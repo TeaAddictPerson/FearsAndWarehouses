@@ -52,6 +52,8 @@ public class Poltergeist : MonoBehaviour
     private bool isBeingExorcised = false;
     private Vector3 deathPosition;
 
+    private bool isPointing = false;
+
     private void Start()
     {
         Debug.Log("Poltergeist: Start called");
@@ -78,7 +80,7 @@ public class Poltergeist : MonoBehaviour
             if (debugMode) Debug.Log("Poltergeist: Checking if spotted");
             CheckIfSpotted();
         }
-        else if (!isAttacking)
+        else if (!isAttacking && !isPointing)
         {
             if (debugMode) Debug.Log("Poltergeist: Handling movement");
             HandleMovement();
@@ -229,34 +231,45 @@ public class Poltergeist : MonoBehaviour
 
     private void OnSpotted()
     {
+        if (hasBeenSpotted)
+        {
+            Debug.Log("Poltergeist: Уже был замечен ранее");
+            return;
+        }
+
+        Debug.Log("Poltergeist: Впервые замечен игроком");
         hasBeenSpotted = true;
+        isPointing = true;
         
         // Поворачиваемся к игроку
         if (playerTransform)
         {
             Vector3 directionToPlayer = (playerTransform.position - transform.position).normalized;
             transform.rotation = Quaternion.LookRotation(directionToPlayer);
-            if (debugMode) Debug.Log("Poltergeist: Rotated to face player");
+            Debug.Log("Poltergeist: Повернулся к игроку");
         }
         
         // Останавливаем звук плача
         if (cryingAudioSource)
         {
             cryingAudioSource.Stop();
-            if (debugMode) Debug.Log("Poltergeist: Stopped crying sound");
+            Debug.Log("Poltergeist: Остановлен звук плача");
         }
 
+        // Проигрываем анимацию указывания и звук
         if (animator)
         {
             animator.SetBool(CryingHash, false);
+            animator.SetBool(IdleHash, false);
+            animator.SetBool(RunHash, false);
             animator.SetTrigger(PointingHash);
-            if (debugMode) Debug.Log("Poltergeist: Started pointing animation");
+            Debug.Log("Poltergeist: Запущена анимация указывания");
         }
 
         if (pointingSound && audioSource)
         {
             audioSource.PlayOneShot(pointingSound);
-            if (debugMode) Debug.Log("Poltergeist: Played pointing sound");
+            Debug.Log("Poltergeist: Проигран звук указывания");
         }
 
         // Запускаем корутину для ожидания окончания анимации указывания
@@ -265,10 +278,13 @@ public class Poltergeist : MonoBehaviour
 
     private IEnumerator WaitForPointingAnimation()
     {
+        Debug.Log("Poltergeist: Ожидание окончания анимации указывания");
         // Ждем окончания анимации указывания (примерно 2 секунды)
         yield return new WaitForSeconds(2f);
         
-        if (debugMode) Debug.Log("Poltergeist: Pointing animation finished, starting chase");
+        Debug.Log("Poltergeist: Анимация указывания завершена, начинаем преследование");
+        isPointing = false;
+        isMoving = true;
     }
 
     private void HandleMovement()
@@ -386,12 +402,13 @@ public class Poltergeist : MonoBehaviour
         Debug.Log($"Poltergeist: Spawning at point {point.name}");
         transform.position = point.position;
         currentSpawnPoint = point.position;
-        targetHeight = point.position.y; // Сохраняем высоту точки появления
+        targetHeight = point.position.y;
         isActive = true;
         isVisible = true;
         isAttacking = false;
         isMoving = false;
         hasBeenSpotted = false;
+        isPointing = false;
         SetVisibility(true);
 
         if (animator)
@@ -501,15 +518,29 @@ public class Poltergeist : MonoBehaviour
 
     public void StartExorcism()
     {
-        if (isBeingExorcised) return;
+        if (isBeingExorcised)
+        {
+            Debug.Log("Poltergeist: Изгнание уже начато");
+            return;
+        }
         
+        Debug.Log("Poltergeist: Начато изгнание");
         isBeingExorcised = true;
         isActive = false;
         deathPosition = transform.position;
+        Debug.Log($"Poltergeist: Позиция смерти установлена: {deathPosition}");
         
         // Останавливаем все звуки
-        if (audioSource) audioSource.Stop();
-        if (cryingAudioSource) cryingAudioSource.Stop();
+        if (audioSource)
+        {
+            audioSource.Stop();
+            Debug.Log("Poltergeist: Остановлен основной звук");
+        }
+        if (cryingAudioSource)
+        {
+            cryingAudioSource.Stop();
+            Debug.Log("Poltergeist: Остановлен звук плача");
+        }
         
         // Останавливаем анимации
         if (animator)
@@ -517,6 +548,7 @@ public class Poltergeist : MonoBehaviour
             animator.SetBool(CryingHash, false);
             animator.SetBool(IdleHash, false);
             animator.SetBool(RunHash, false);
+            Debug.Log("Poltergeist: Остановлены все анимации");
         }
         
         StartCoroutine(ExorcismRoutine());
@@ -524,17 +556,37 @@ public class Poltergeist : MonoBehaviour
 
     private IEnumerator ExorcismRoutine()
     {
-        // Ждем время изгнания
+        Debug.Log($"Poltergeist: Ожидание изгнания ({exorcismDuration} секунд)");
         yield return new WaitForSeconds(exorcismDuration);
         
-        // Ищем объект с тегом Dust и перемещаем его
+        // Ищем объект с тегом Dust и проигрываем его частицы
         GameObject dust = GameObject.FindGameObjectWithTag("Dust");
         if (dust != null)
         {
-            dust.transform.position = deathPosition;
+            Vector3 dustPosition = deathPosition;
+            dustPosition.y += 2f; // Поднимаем частицы на 2 единицы выше
+            Debug.Log($"Poltergeist: Найден объект Dust, перемещаем на позицию {dustPosition}");
+            dust.transform.position = dustPosition;
+
+            // Проигрываем систему частиц
+            ParticleSystem particleSystem = dust.GetComponent<ParticleSystem>();
+            if (particleSystem != null)
+            {
+                Debug.Log("Poltergeist: Проигрываем систему частиц");
+                particleSystem.Clear(); // Очищаем предыдущие частицы
+                particleSystem.Play(); // Запускаем проигрывание
+            }
+            else
+            {
+                Debug.LogError("Poltergeist: На объекте Dust не найдена система частиц!");
+            }
+        }
+        else
+        {
+            Debug.LogError("Poltergeist: Объект с тегом Dust не найден в сцене!");
         }
         
-        // Деактивируем призрака
+        Debug.Log("Poltergeist: Деактивация призрака");
         gameObject.SetActive(false);
     }
 } 
