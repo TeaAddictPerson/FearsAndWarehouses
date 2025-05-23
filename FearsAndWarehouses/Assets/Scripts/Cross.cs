@@ -28,6 +28,29 @@ public class Cross : GhostItem
             // Плавно двигаем крест вперед
             weaponParent.localPosition = Vector3.Lerp(weaponParent.localPosition, targetPosition, Time.deltaTime * moveSpeed);
         }
+
+        // Проверяем наличие полтергейста в конусе
+        Collider[] hits = Physics.OverlapSphere(transform.position, repulsionRadius);
+        float coneAngle = 45f;
+
+        foreach (var hit in hits)
+        {
+            if (hit.CompareTag("Poltergeist"))
+            {
+                Vector3 directionToGhost = (hit.transform.position - weaponParent.position).normalized;
+                float angleToGhost = Vector3.Angle(weaponParent.forward, directionToGhost);
+
+                if (angleToGhost <= coneAngle)
+                {
+                    Poltergeist ghost = hit.GetComponent<Poltergeist>();
+                    if (ghost != null)
+                    {
+                        ghost.StartExorcism();
+                        break;
+                    }
+                }
+            }
+        }
     }
 
     protected override void StopUsing()
@@ -42,5 +65,32 @@ public class Cross : GhostItem
         // Визуализация радиуса отталкивания
         Gizmos.color = Color.red;
         Gizmos.DrawWireSphere(transform.position, repulsionRadius);
+
+        // Визуализация конуса
+        float coneLength = 5f;
+        float coneAngle = 45f;
+
+        Vector3 origin = weaponParent ? weaponParent.position : transform.position;
+        Vector3 forward = weaponParent ? weaponParent.forward : transform.forward;
+
+        Gizmos.DrawLine(origin, origin + forward * coneLength);
+
+        float baseRadius = coneLength * Mathf.Tan(coneAngle * Mathf.Deg2Rad);
+
+        int segments = 24;
+        Vector3 prevPoint = Vector3.zero;
+        for (int i = 0; i <= segments; i++)
+        {
+            float angle = (360f / segments) * i;
+            Vector3 circlePoint = Quaternion.AngleAxis(angle, forward) * (weaponParent.right * baseRadius);
+            Vector3 worldPoint = origin + forward * coneLength + circlePoint;
+
+            if (i > 0)
+            {
+                Gizmos.DrawLine(prevPoint, worldPoint);
+                Gizmos.DrawLine(origin, worldPoint);
+            }
+            prevPoint = worldPoint;
+        }
     }
-} 
+}
