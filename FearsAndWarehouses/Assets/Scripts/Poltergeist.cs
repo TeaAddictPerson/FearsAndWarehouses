@@ -461,7 +461,12 @@ public class Poltergeist : MonoBehaviour
 
         // Наносим урон
         playerController.TakeDamage(1);
-        StartCoroutine(ShowBloodEffect());
+        
+        // Проверяем, не будет ли урон смертельным
+        if (playerController.CurrentHealth > 0)
+        {
+            StartCoroutine(ShowBloodEffect());
+        }
 
         yield return new WaitForSeconds(1f);
 

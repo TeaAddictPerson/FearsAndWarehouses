@@ -323,7 +323,13 @@ public class LostSoul : MonoBehaviour
         {
             // Успешная атака
             playerController.TakeDamage(1);
-            StartCoroutine(ShowBloodEffect()); // Запускаем эффект крови
+            
+            // Проверяем, не будет ли урон смертельным
+            if (playerController.CurrentHealth > 0)
+            {
+                StartCoroutine(ShowBloodEffect()); // Запускаем эффект крови
+            }
+            
             yield return StartCoroutine(StunPlayer());
             
             // Скрываем призрака на 20 секунд
