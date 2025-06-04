@@ -63,7 +63,7 @@ public class CheckUser : MonoBehaviour
                             {
                                 feedbackText.text = "Успешный вход! Подождите загрузку";
                                 Debug.Log("Успешный вход!");
-                                SceneManager.LoadScene(0);
+                                SceneManager.LoadScene(2);
 
                                 UserSession.UserName = userName;
                                 Debug.Log($"Имя пользователя сохранено: {UserSession.UserName}");

@@ -95,7 +95,7 @@ public class AddUserCheck : MonoBehaviour
                         {
                             feedbackText.text = $"Пользователь '{userName}' успешно добавлен!";
                             Debug.Log($"Пользователь '{userName}' успешно добавлен в базу данных.");
-                            SceneManager.LoadScene(3);
+                          
                            
                             UserSession.UserName = userName;
                             Debug.Log($"Имя пользователя сохранено: {UserSession.UserName}");
