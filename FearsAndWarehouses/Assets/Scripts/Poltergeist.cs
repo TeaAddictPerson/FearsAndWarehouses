@@ -132,7 +132,7 @@ public class Poltergeist : MonoBehaviour
             Debug.Log("Poltergeist: Player found");
             playerController = player.GetComponent<FirstPersonController>();
             playerTransform = player.transform;
-            
+
             // Ищем камеру в FirstPersonController
             if (playerController != null)
             {
@@ -198,7 +198,7 @@ public class Poltergeist : MonoBehaviour
         // Получаем направление от камеры к призраку
         Vector3 directionToGhost = transform.position - playerCamera.transform.position;
         float distanceToGhost = directionToGhost.magnitude;
-        
+
         // Вычисляем угол между направлением взгляда камеры и направлением к призраку
         float angle = Vector3.Angle(playerCamera.transform.forward, directionToGhost);
 
@@ -217,10 +217,10 @@ public class Poltergeist : MonoBehaviour
         if (angle <= detectionAngle / 2f && distanceToGhost <= detectionDistance)
         {
             if (debugMode) Debug.Log("Poltergeist: In field of view!");
-            
+
             // Проверяем, нет ли препятствий между игроком и призраком
             RaycastHit hit;
-            if (!Physics.Raycast(playerCamera.transform.position, directionToGhost, out hit, distanceToGhost) || 
+            if (!Physics.Raycast(playerCamera.transform.position, directionToGhost, out hit, distanceToGhost) ||
                 hit.collider.transform.IsChildOf(transform))
             {
                 if (debugMode) Debug.Log("Poltergeist: Spotted by player!");
@@ -240,7 +240,7 @@ public class Poltergeist : MonoBehaviour
         Debug.Log("Poltergeist: Впервые замечен игроком");
         hasBeenSpotted = true;
         isPointing = true;
-        
+
         // Поворачиваемся к игроку
         if (playerTransform)
         {
@@ -248,7 +248,7 @@ public class Poltergeist : MonoBehaviour
             transform.rotation = Quaternion.LookRotation(directionToPlayer);
             Debug.Log("Poltergeist: Повернулся к игроку");
         }
-        
+
         // Останавливаем звук плача
         if (cryingAudioSource)
         {
@@ -281,7 +281,7 @@ public class Poltergeist : MonoBehaviour
         Debug.Log("Poltergeist: Ожидание окончания анимации указывания");
         // Ждем окончания анимации указывания (примерно 2 секунды)
         yield return new WaitForSeconds(2f);
-        
+
         Debug.Log("Poltergeist: Анимация указывания завершена, начинаем преследование");
         isPointing = false;
         isMoving = true;
@@ -312,13 +312,13 @@ public class Poltergeist : MonoBehaviour
                 animator.SetBool(IdleHash, true);
             }
             isMoving = false;
-            
+
             // Останавливаем звук шагов
             if (audioSource.isPlaying)
             {
                 audioSource.Stop();
             }
-            
+
             if (debugMode) Debug.Log("Poltergeist: Player is looking at ghost - staying still");
         }
         else
@@ -326,11 +326,11 @@ public class Poltergeist : MonoBehaviour
             // Игрок не смотрит - двигаемся к нему
             Vector3 directionToPlayer = (playerTransform.position - transform.position).normalized;
             directionToPlayer.y = 0; // Игнорируем вертикальную составляющую при повороте
-            
+
             // Поворачиваемся к игроку
             Quaternion targetRotation = Quaternion.LookRotation(directionToPlayer);
             transform.rotation = Quaternion.Slerp(transform.rotation, targetRotation, Time.deltaTime * 5f);
-            
+
             // Двигаемся вперед, сохраняя целевую высоту
             Vector3 movement = transform.forward * moveSpeed * Time.deltaTime;
             Vector3 newPosition = transform.position + movement;
@@ -385,7 +385,7 @@ public class Poltergeist : MonoBehaviour
     {
         Debug.Log("Poltergeist: Waiting for initial spawn delay");
         yield return new WaitForSeconds(initialSpawnDelay);
-        
+
         if (spawnPoints == null || spawnPoints.Length == 0)
         {
             Debug.LogError("Poltergeist: No spawn points assigned!");
@@ -436,10 +436,10 @@ public class Poltergeist : MonoBehaviour
         // Поворачиваем игрока к призраку
         Vector3 directionToGhost = transform.position - playerTransform.position;
         Quaternion targetRotation = Quaternion.LookRotation(directionToGhost);
-        
+
         float rotationTime = 0f;
         float rotationDuration = 0.5f;
-        
+
         while (rotationTime < rotationDuration)
         {
             rotationTime += Time.deltaTime;
@@ -461,7 +461,7 @@ public class Poltergeist : MonoBehaviour
 
         // Наносим урон
         playerController.TakeDamage(1);
-        
+
         // Проверяем, не будет ли урон смертельным
         if (playerController.CurrentHealth > 0)
         {
@@ -528,13 +528,13 @@ public class Poltergeist : MonoBehaviour
             Debug.Log("Poltergeist: Изгнание уже начато");
             return;
         }
-        
+
         Debug.Log("Poltergeist: Начато изгнание");
         isBeingExorcised = true;
         isActive = false;
         deathPosition = transform.position;
         Debug.Log($"Poltergeist: Позиция смерти установлена: {deathPosition}");
-        
+
         // Останавливаем все звуки
         if (audioSource)
         {
@@ -546,7 +546,7 @@ public class Poltergeist : MonoBehaviour
             cryingAudioSource.Stop();
             Debug.Log("Poltergeist: Остановлен звук плача");
         }
-        
+
         // Останавливаем анимации
         if (animator)
         {
@@ -555,7 +555,7 @@ public class Poltergeist : MonoBehaviour
             animator.SetBool(RunHash, false);
             Debug.Log("Poltergeist: Остановлены все анимации");
         }
-        
+
         StartCoroutine(ExorcismRoutine());
     }
 
@@ -563,7 +563,7 @@ public class Poltergeist : MonoBehaviour
     {
         Debug.Log($"Poltergeist: Ожидание изгнания ({exorcismDuration} секунд)");
         yield return new WaitForSeconds(exorcismDuration);
-        
+
         // Ищем объект с тегом Dust и проигрываем его частицы
         GameObject dust = GameObject.FindGameObjectWithTag("Dust");
         if (dust != null)
@@ -590,8 +590,39 @@ public class Poltergeist : MonoBehaviour
         {
             Debug.LogError("Poltergeist: Объект с тегом Dust не найден в сцене!");
         }
-        
+
         Debug.Log("Poltergeist: Деактивация призрака");
         gameObject.SetActive(false);
+
+
+        // Обновляем статус в PlayerSpawner и спавним игрока
+        PlayerSpawner spawner = FindObjectOfType<PlayerSpawner>();
+        if (spawner != null)
+        {
+            string ghostTag = this.gameObject.tag;  // Должно быть "Poltergeist" в данном случае, но универсально
+
+            switch (ghostTag)
+            {
+                case "Phantom":
+                    spawner.phantomCompleted = true;
+                    break;
+                case "LostSoul":
+                    spawner.soulCompleted = true;
+                    break;
+                case "Poltergeist":
+                    spawner.polterCompleted = true;
+                    break;
+                default:
+                    Debug.LogWarning("Неизвестный тег призрака: " + ghostTag);
+                    break;
+            }
+
+            spawner.SpawnPlayerAccordingToProgress();
+        }
+        else
+        {
+            Debug.LogError("PlayerSpawner не найден!");
+        }
     }
-} 
+
+}

@@ -25128,7 +25128,7 @@ GameObject:
   - component: {fileID: 621539239}
   m_Layer: 0
   m_Name: SpawnPoint3
-  m_TagString: Untagged
+  m_TagString: LostSoul
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -25256,7 +25256,7 @@ GameObject:
   - component: {fileID: 623902042}
   m_Layer: 0
   m_Name: SpawnPoint1
-  m_TagString: Untagged
+  m_TagString: Poltergeist
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -44613,7 +44613,7 @@ GameObject:
   - component: {fileID: 1061237451}
   m_Layer: 0
   m_Name: SpawnPoint2
-  m_TagString: Untagged
+  m_TagString: Phantom
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -55365,6 +55365,9 @@ MonoBehaviour:
   - {fileID: 1061237451}
   - {fileID: 623902042}
   playerTag: Player
+  phantomCompleted: 0
+  soulCompleted: 0
+  polterCompleted: 0
 --- !u!4 &1324806733
 Transform:
   m_ObjectHideFlags: 0
