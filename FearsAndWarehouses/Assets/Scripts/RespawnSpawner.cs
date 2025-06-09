@@ -23,7 +23,6 @@ public class RespawnSpawner : MonoBehaviour
         return respawnPoints[lastRespawnIndex];
     }
 
-    // Можно оставить метод, если нужно
     public void RespawnPlayer(GameObject player)
     {
         Transform spawnPoint = GetNextRespawnPoint();

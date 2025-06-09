@@ -32,7 +32,7 @@ public class PhantomGhost : MonoBehaviour
     private bool hasAttacked = false;
     private bool hasPlayedScreamer = false;
 
-    private bool isCooldown = false;  // флаг кулдауна
+    private bool isCooldown = false; 
     private float cooldownTime = 20f;
 
     [HideInInspector] public bool canBeCaught = false;

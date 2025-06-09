@@ -3,10 +3,10 @@ using UnityEngine;
 public class GhostItem : MonoBehaviour
 {
     [Header("Основные настройки")]
-    public float useRange = 2f; // Дальность использования предмета
-    public float moveSpeed = 2f; // Скорость выдвижения предмета
-    public float maxMoveDistance = 0.5f; // Максимальное расстояние выдвижения
-    protected bool shouldMoveForward = false; // Флаг для определения, должен ли предмет отдаляться
+    public float useRange = 2f; 
+    public float moveSpeed = 2f; 
+    public float maxMoveDistance = 0.5f; 
+    protected bool shouldMoveForward = false; 
 
     protected bool isUsing = false;
     protected bool isReturning = false;
@@ -16,7 +16,7 @@ public class GhostItem : MonoBehaviour
 
     protected virtual void Start()
     {
-        // Проверяем, что это не базовый класс
+
         if (this.GetType() == typeof(GhostItem))
         {
             Debug.LogError("Нельзя использовать базовый класс GhostItem напрямую! Используйте один из дочерних классов: SilverMirror, Cross, HolyWater или Incense.");
@@ -24,7 +24,6 @@ public class GhostItem : MonoBehaviour
             return;
         }
 
-        // Инициализируем только если это дочерний класс
         itemTransform = transform;
         originalPosition = itemTransform.localPosition;
         targetPosition = originalPosition + Vector3.forward * maxMoveDistance;
@@ -80,7 +79,7 @@ public class GhostItem : MonoBehaviour
         {
             itemTransform.localPosition = Vector3.Lerp(itemTransform.localPosition, originalPosition, Time.deltaTime * moveSpeed);
 
-            // Если предмет достаточно близко к исходной позиции, останавливаем возврат
+
             if (Vector3.Distance(itemTransform.localPosition, originalPosition) < 0.001f)
             {
                 itemTransform.localPosition = originalPosition;
