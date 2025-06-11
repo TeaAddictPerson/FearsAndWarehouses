@@ -32,7 +32,7 @@ public class PhantomGhost : MonoBehaviour
     private bool hasAttacked = false;
     private bool hasPlayedScreamer = false;
 
-    private bool isCooldown = false; 
+    private bool isCooldown = false;
     private float cooldownTime = 20f;
 
     [HideInInspector] public bool canBeCaught = false;
@@ -147,7 +147,6 @@ public class PhantomGhost : MonoBehaviour
         targetPosition.y = transform.position.y;
         transform.position = targetPosition;
 
-        // Атака и кулдаун
         if (distanceToPlayer <= damageDistance && !isCooldown)
         {
             FirstPersonController playerController = player.GetComponent<FirstPersonController>();
@@ -178,9 +177,11 @@ public class PhantomGhost : MonoBehaviour
         Debug.Log($"{name}: Начинаю кулдаун на {cooldownTime} секунд");
         yield return new WaitForSeconds(cooldownTime);
         isCooldown = false;
+        hasPlayedScreamer = false; // Позволяем скримеру проиграться снова после кулдауна
         Debug.Log($"{name}: Кулдаун завершён, могу атаковать снова");
     }
 
+    // --- ИЗМЕНЕНИЕ ЗДЕСЬ ---
     private IEnumerator PlayScreamer()
     {
         if (screamerImage != null)
@@ -194,13 +195,13 @@ public class PhantomGhost : MonoBehaviour
         if (screamerImage != null)
             screamerImage.SetActive(false);
 
+        // После скримера призрак прекращает погоню и телепортируется,
+        // но остается в состоянии, когда его можно поймать.
         if (patrolPoints.Length > 0)
         {
             transform.position = patrolPoints[0].position;
             currentPatrolIndex = 0;
             isChasing = false;
-            canBeCaught = false;
-            hasAttacked = false;
         }
     }
 
@@ -229,5 +230,25 @@ public class PhantomGhost : MonoBehaviour
 
         Gizmos.color = Color.blue;
         Gizmos.DrawWireSphere(detectionCenter, chaseRange);
+    }
+
+    /// <summary>
+    /// Этот метод должен вызываться извне, когда игрок успешно ловит фантома.
+    /// </summary>
+    public void OnDefeated()
+    {
+        Debug.Log($"Призрак {this.gameObject.name} был побежден.");
+
+        this.gameObject.SetActive(false);
+
+        PlayerSpawner spawner = FindObjectOfType<PlayerSpawner>();
+        if (spawner != null)
+        {
+            spawner.GhostDefeated(this.gameObject.tag);
+        }
+        else
+        {
+            Debug.LogError("PlayerSpawner не найден на сцене! Перемещение игрока невозможно.");
+        }
     }
 }

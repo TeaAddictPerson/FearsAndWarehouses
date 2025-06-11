@@ -14,6 +14,7 @@ public class AddUserCheck : MonoBehaviour
     public TMP_InputField passwordInputField;
     public TMP_Text feedbackText;
     private string dbPath;
+    private const string UserNameKey = "LoggedInUserName"; // Ключ для PlayerPrefs
 
     void Start()
     {
@@ -25,22 +26,18 @@ public class AddUserCheck : MonoBehaviour
         string userName = userNameInputField.text.Trim();
         string password = passwordInputField.text.Trim();
 
+        // (Ваш код валидации остается без изменений)
         if (string.IsNullOrEmpty(userName))
         {
             feedbackText.text = "Имя пользователя не может быть пустым!";
-            Debug.LogWarning("Имя пользователя не может быть пустым!");
             return;
         }
-
         string passwordFeedback = CheckPasswordErrors(password);
         if (!string.IsNullOrEmpty(passwordFeedback))
         {
             feedbackText.text = passwordFeedback;
-            Debug.LogWarning(passwordFeedback);
             return;
         }
-
-        
 
         string connectionString = $"URI=file:{dbPath}";
 
@@ -50,67 +47,60 @@ public class AddUserCheck : MonoBehaviour
             {
                 dbConnection.Open();
 
-                if (dbConnection.State == ConnectionState.Open)
+                // Проверяем, существует ли пользователь
+                string checkQuery = "SELECT COUNT(*) FROM users WHERE name = @name;";
+                using (IDbCommand checkCommand = dbConnection.CreateCommand())
                 {
-                    string checkQuery = "SELECT COUNT(*) FROM users WHERE name = @name;";
-
-                    using (IDbCommand checkCommand = dbConnection.CreateCommand())
+                    checkCommand.CommandText = checkQuery;
+                    IDbDataParameter nameParam = checkCommand.CreateParameter();
+                    nameParam.ParameterName = "@name";
+                    nameParam.Value = userName;
+                    checkCommand.Parameters.Add(nameParam);
+                    if (Convert.ToInt32(checkCommand.ExecuteScalar()) > 0)
                     {
-                        checkCommand.CommandText = checkQuery;
-
-                        IDbDataParameter nameParam = checkCommand.CreateParameter();
-                        nameParam.ParameterName = "@name";
-                        nameParam.Value = userName;
-                        checkCommand.Parameters.Add(nameParam);
-
-                        int userCount = Convert.ToInt32(checkCommand.ExecuteScalar());
-
-                        if (userCount > 0)
-                        {
-                            feedbackText.text = "Пользователь с таким именем уже существует!";
-                            Debug.LogWarning("Пользователь с таким именем уже существует!");
-                            return;
-                        }
-                    }
-
-                    string query = "INSERT INTO users (name, password) VALUES (@name, @password);";
-
-                    using (IDbCommand command = dbConnection.CreateCommand())
-                    {
-                        command.CommandText = query;
-
-                        var nameParameter = command.CreateParameter();
-                        nameParameter.ParameterName = "@name";
-                        nameParameter.Value = userName;
-                        command.Parameters.Add(nameParameter);
-
-                        var passwordParameter = command.CreateParameter();
-                        passwordParameter.ParameterName = "@password";
-                        passwordParameter.Value = password;
-                        command.Parameters.Add(passwordParameter);
-
-                        int rowsAffected = command.ExecuteNonQuery();
-
-                        if (rowsAffected > 0)
-                        {
-                            feedbackText.text = $"Пользователь '{userName}' успешно добавлен!";
-                            Debug.Log($"Пользователь '{userName}' успешно добавлен в базу данных.");
-                          
-                           
-                            UserSession.UserName = userName;
-                            Debug.Log($"Имя пользователя сохранено: {UserSession.UserName}");
-                        }
-                        else
-                        {
-                            feedbackText.text = "Не удалось добавить пользователя.";
-                            Debug.LogWarning("Не удалось добавить пользователя в базу данных.");
-                        }
+                        feedbackText.text = "Пользователь с таким именем уже существует!";
+                        return;
                     }
                 }
-                else
+
+                // --- ИЗМЕНЕНИЕ ЗДЕСЬ ---
+                // Добавляем нового пользователя с нулевым прогрессом
+                string query = "INSERT INTO users (name, password, phantom, soul, polter) VALUES (@name, @password, 0, 0, 0);";
+
+                using (IDbCommand command = dbConnection.CreateCommand())
                 {
-                    feedbackText.text = "Не удалось подключиться к базе данных.";
-                    Debug.LogWarning("Не удалось подключиться к базе данных.");
+                    command.CommandText = query;
+
+                    var nameParameter = command.CreateParameter();
+                    nameParameter.ParameterName = "@name";
+                    nameParameter.Value = userName;
+                    command.Parameters.Add(nameParameter);
+
+                    var passwordParameter = command.CreateParameter();
+                    passwordParameter.ParameterName = "@password";
+                    passwordParameter.Value = password;
+                    command.Parameters.Add(passwordParameter);
+
+                    int rowsAffected = command.ExecuteNonQuery();
+
+                    if (rowsAffected > 0)
+                    {
+                        feedbackText.text = "Регистрация успешна! Вход...";
+                        Debug.Log($"Пользователь '{userName}' успешно добавлен в базу данных с нулевым прогрессом.");
+
+                        // --- ДОБАВЛЕНО ЗДЕСЬ ---
+                        // Сохраняем имя пользователя в PlayerPrefs для использования в других сценах
+                        PlayerPrefs.SetString(UserNameKey, userName);
+                        PlayerPrefs.Save();
+                        Debug.Log($"Имя пользователя '{userName}' сохранено в PlayerPrefs.");
+
+                        // Сразу переходим в игру
+                        SceneManager.LoadScene(2);
+                    }
+                    else
+                    {
+                        feedbackText.text = "Не удалось добавить пользователя.";
+                    }
                 }
             }
         }
@@ -123,36 +113,21 @@ public class AddUserCheck : MonoBehaviour
 
     private string CheckPasswordErrors(string password)
     {
-        if (password.Length < 8)
-            return "Пароль должен содержать не менее 8 символов";
-
-        if (password.Length > 12)
-            return "Пароль должен содержать не более 12 символов";
-
-        bool hasLetter = false;
-        bool hasDigit = false;
-        bool hasSpecialChar = false;
+        // (Ваш код валидации пароля остается без изменений)
+        if (password.Length < 8) return "Пароль должен содержать не менее 8 символов";
+        if (password.Length > 12) return "Пароль должен содержать не более 12 символов";
+        bool hasLetter = false, hasDigit = false, hasSpecialChar = false;
         List<string> missingComponents = new List<string>();
-
         foreach (char c in password)
         {
             if (char.IsLower(c)) hasLetter = true;
             if (char.IsDigit(c)) hasDigit = true;
             if ("_+-/()".Contains(c)) hasSpecialChar = true;
         }
-
-        if (!hasLetter)
-            missingComponents.Add("букву");
-        if (!hasDigit)
-            missingComponents.Add("цифру");
-        if (!hasSpecialChar)
-            missingComponents.Add("специальный символ (_+-/())");
-
-        if (missingComponents.Count > 0)
-        {
-            return "Пароль должен содержать: " + string.Join(", ", missingComponents) + ".";
-        }
-
+        if (!hasLetter) missingComponents.Add("букву");
+        if (!hasDigit) missingComponents.Add("цифру");
+        if (!hasSpecialChar) missingComponents.Add("специальный символ (_+-/())");
+        if (missingComponents.Count > 0) return "Пароль должен содержать: " + string.Join(", ", missingComponents) + ".";
         return string.Empty;
     }
 }

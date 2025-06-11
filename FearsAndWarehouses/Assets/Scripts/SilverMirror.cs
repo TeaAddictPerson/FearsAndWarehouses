@@ -62,10 +62,12 @@ public class SilverMirror : GhostItem
         isCatching = false;
     }
 
+    // --- ИЗМЕНЕНИЕ ЗДЕСЬ ---
     private IEnumerator CatchGhost(PhantomGhost ghost)
     {
-        isCatching = false;
+        isCatching = false; // Предотвращаем повторную поимку
 
+        // Визуальный эффект исчезновения
         Renderer[] renderers = ghost.GetComponentsInChildren<Renderer>();
         float duration = 2f;
         float elapsed = 0f;
@@ -89,6 +91,7 @@ public class SilverMirror : GhostItem
             yield return null;
         }
 
+        // Эффект пыли
         GameObject dustParticles = GameObject.FindGameObjectWithTag("Dust");
         if (dustParticles != null)
         {
@@ -100,7 +103,8 @@ public class SilverMirror : GhostItem
             }
         }
 
-        ghost.gameObject.SetActive(false);
+        // Вызываем метод поражения призрака, который сам себя деактивирует и вызовет PlayerSpawner
+        ghost.OnDefeated();
     }
 
     private void OnDrawGizmosSelected()

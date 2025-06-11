@@ -55365,9 +55365,7 @@ MonoBehaviour:
   - {fileID: 1061237451}
   - {fileID: 623902042}
   playerTag: Player
-  phantomCompleted: 0
-  soulCompleted: 0
-  polterCompleted: 0
+  databaseName: FearsAndWarehouses.db
 --- !u!4 &1324806733
 Transform:
   m_ObjectHideFlags: 0

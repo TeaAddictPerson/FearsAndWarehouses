@@ -12,6 +12,7 @@ public class CheckUser : MonoBehaviour
     public TMP_InputField passwordInputField;
     public TMP_Text feedbackText;
     private string dbPath;
+    private const string UserNameKey = "LoggedInUserName"; // Ключ для PlayerPrefs
 
     void Start()
     {
@@ -26,7 +27,6 @@ public class CheckUser : MonoBehaviour
         if (string.IsNullOrWhiteSpace(userName) || string.IsNullOrWhiteSpace(password))
         {
             feedbackText.text = "Имя пользователя и пароль не могут быть пустыми!";
-            Debug.LogWarning("Имя пользователя и пароль не могут быть пустыми!");
             return;
         }
 
@@ -37,56 +37,43 @@ public class CheckUser : MonoBehaviour
             using (IDbConnection dbConnection = new SqliteConnection(connectionString))
             {
                 dbConnection.Open();
+                string query = "SELECT password FROM users WHERE name = @name;";
 
-                if (dbConnection.State == ConnectionState.Open)
+                using (IDbCommand command = dbConnection.CreateCommand())
                 {
-                    Debug.Log("Подключение к базе данных успешно!");
+                    command.CommandText = query;
+                    IDbDataParameter nameParam = command.CreateParameter();
+                    nameParam.ParameterName = "@name";
+                    nameParam.Value = userName;
+                    command.Parameters.Add(nameParam);
+                    object result = command.ExecuteScalar();
 
-                    string query = "SELECT password FROM users WHERE name = @name;";
-
-                    using (IDbCommand command = dbConnection.CreateCommand())
+                    if (result != null)
                     {
-                        command.CommandText = query;
-
-                        IDbDataParameter nameParam = command.CreateParameter();
-                        nameParam.ParameterName = "@name";
-                        nameParam.Value = userName;
-                        command.Parameters.Add(nameParam);
-
-                        object result = command.ExecuteScalar();
-
-                        if (result != null)
+                        string storedPassword = result.ToString();
+                        if (storedPassword == password)
                         {
-                            string storedPassword = result.ToString();
+                            feedbackText.text = "Успешный вход! Подождите загрузку";
+                            Debug.Log("Успешный вход!");
 
-                            if (storedPassword == password)
-                            {
-                                feedbackText.text = "Успешный вход! Подождите загрузку";
-                                Debug.Log("Успешный вход!");
-                                SceneManager.LoadScene(2);
+                            // --- ДОБАВЛЕНО ЗДЕСЬ ---
+                            // Сохраняем имя пользователя в PlayerPrefs для использования в других сценах
+                            PlayerPrefs.SetString(UserNameKey, userName);
+                            PlayerPrefs.Save();
+                            Debug.Log($"Имя пользователя '{userName}' сохранено в PlayerPrefs.");
 
-                                UserSession.UserName = userName;
-                                Debug.Log($"Имя пользователя сохранено: {UserSession.UserName}");
-
-                               
-                            }
-                            else
-                            {
-                                feedbackText.text = "Неправильный пароль!";
-                                Debug.LogWarning("Неправильный пароль!");
-                            }
+                            // Переходим в игру
+                            SceneManager.LoadScene(2);
                         }
                         else
                         {
-                            feedbackText.text = "Пользователь не найден!";
-                            Debug.LogWarning("Пользователь не найден!");
+                            feedbackText.text = "Неправильный пароль!";
                         }
                     }
-                }
-                else
-                {
-                    feedbackText.text = "Не удалось подключиться к базе данных.";
-                    Debug.LogWarning("Не удалось подключиться к базе данных.");
+                    else
+                    {
+                        feedbackText.text = "Пользователь не найден!";
+                    }
                 }
             }
         }

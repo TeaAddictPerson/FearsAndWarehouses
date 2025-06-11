@@ -569,17 +569,16 @@ public class Poltergeist : MonoBehaviour
         if (dust != null)
         {
             Vector3 dustPosition = deathPosition;
-            dustPosition.y += 2f; // Поднимаем частицы на 2 единицы выше
+            dustPosition.y += 2f;
             Debug.Log($"Poltergeist: Найден объект Dust, перемещаем на позицию {dustPosition}");
             dust.transform.position = dustPosition;
 
-            // Проигрываем систему частиц
             ParticleSystem particleSystem = dust.GetComponent<ParticleSystem>();
             if (particleSystem != null)
             {
                 Debug.Log("Poltergeist: Проигрываем систему частиц");
-                particleSystem.Clear(); // Очищаем предыдущие частицы
-                particleSystem.Play(); // Запускаем проигрывание
+                particleSystem.Clear();
+                particleSystem.Play();
             }
             else
             {
@@ -595,33 +594,18 @@ public class Poltergeist : MonoBehaviour
         gameObject.SetActive(false);
 
 
-        // Обновляем статус в PlayerSpawner и спавним игрока
+        // --- ИЗМЕНЕННАЯ ЧАСТЬ ---
+        // Находим PlayerSpawner на сцене
         PlayerSpawner spawner = FindObjectOfType<PlayerSpawner>();
         if (spawner != null)
         {
-            string ghostTag = this.gameObject.tag;  // Должно быть "Poltergeist" в данном случае, но универсально
-
-            switch (ghostTag)
-            {
-                case "Phantom":
-                    spawner.phantomCompleted = true;
-                    break;
-                case "LostSoul":
-                    spawner.soulCompleted = true;
-                    break;
-                case "Poltergeist":
-                    spawner.polterCompleted = true;
-                    break;
-                default:
-                    Debug.LogWarning("Неизвестный тег призрака: " + ghostTag);
-                    break;
-            }
-
-            spawner.SpawnPlayerAccordingToProgress();
+            // Сообщаем спавнеру, что этот призрак побежден, передавая свой тег.
+            // Спавнер сам обработает задержку, сохранение в БД и перемещение игрока.
+            spawner.GhostDefeated(this.gameObject.tag);
         }
         else
         {
-            Debug.LogError("PlayerSpawner не найден!");
+            Debug.LogError("PlayerSpawner не найден на сцене! Перемещение игрока невозможно.");
         }
     }
 

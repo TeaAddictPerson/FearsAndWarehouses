@@ -129,7 +129,6 @@ public class LostSoul : MonoBehaviour
             StartCoroutine(AttackRoutine());
         }
 
-
         if (!isAggressive && !isAttacking && !isStunned && !isOnCooldown)
         {
             Patrol();
@@ -194,7 +193,6 @@ public class LostSoul : MonoBehaviour
         isPreparingAttack = true;
         isAggressive = true;
 
-        // Позиция игрока
         Vector3 playerPos = playerController.transform.position;
         Vector3 teleportPos = GetRandomAttackPosition();
 
@@ -205,11 +203,9 @@ public class LostSoul : MonoBehaviour
             yield break;
         }
 
-        // Телепортируем призрака
         agent.Warp(hit.position);
         SetVisibility(true);
 
-        // Проигрываем звук рычания при появлении
         if (attackSound && audioSource)
         {
             audioSource.pitch = 1f;
@@ -227,7 +223,6 @@ public class LostSoul : MonoBehaviour
             agent.isStopped = false;
             agent.speed = attackSpeed;
 
-            // Включаем бег
             if (animator)
             {
                 animator.SetBool(RunHash, true);
@@ -236,18 +231,15 @@ public class LostSoul : MonoBehaviour
             }
 
             float chaseTime = 0f;
-            float maxChaseTime = 5f; // Максимальное время преследования
+            float maxChaseTime = 5f;
 
-            // Гонимся за игроком, пока не окажемся в радиусе атаки или не истечет время
             while (Vector3.Distance(transform.position, playerController.transform.position) > attackRange && chaseTime < maxChaseTime)
             {
                 Vector3 directionToPlayer = (playerController.transform.position - transform.position).normalized;
                 Vector3 targetPosition = playerController.transform.position - directionToPlayer * attackRange;
                 agent.SetDestination(targetPosition);
-
                 isMoving = true;
                 HandleFootsteps();
-
                 chaseTime += Time.deltaTime;
                 yield return null;
             }
@@ -255,7 +247,6 @@ public class LostSoul : MonoBehaviour
             agent.ResetPath();
             agent.isStopped = true;
 
-            // Если время истекло, считаем это уворотом
             if (chaseTime >= maxChaseTime)
             {
                 isStunned = true;
@@ -263,18 +254,12 @@ public class LostSoul : MonoBehaviour
                 isPreparingAttack = false;
                 isMoving = false;
 
-                // Принудительно включаем Idle анимацию
                 if (animator)
                 {
                     animator.Play("Idle");
                 }
-
-                // Ждем время оглушения
                 yield return new WaitForSeconds(stunDuration);
-                
                 isStunned = false;
-                
-                // После оглушения продолжаем атаковать
                 if (hasReactedToIncense)
                 {
                     StartCoroutine(PrepareAttackRoutine());
@@ -287,8 +272,6 @@ public class LostSoul : MonoBehaviour
         StartCoroutine(AttackRoutine());
     }
 
-
-
     private IEnumerator AttackRoutine()
     {
         isAttacking = true;
@@ -299,16 +282,14 @@ public class LostSoul : MonoBehaviour
             agent.ResetPath();
         }
 
-        // Сначала проигрываем звук
         if (attackSound && audioSource)
         {
             audioSource.pitch = 1f;
-            audioSource.Stop(); // Останавливаем все текущие звуки
+            audioSource.Stop();
             audioSource.PlayOneShot(attackSound);
-            yield return new WaitForSeconds(0.3f); // Ждем начала звука
+            yield return new WaitForSeconds(0.3f);
         }
 
-        // Затем запускаем анимацию
         if (animator)
         {
             animator.SetBool(RunHash, false);
@@ -321,22 +302,16 @@ public class LostSoul : MonoBehaviour
 
         if (distToPlayer <= attackRange)
         {
-            // Успешная атака
             playerController.TakeDamage(1);
-            
-            // Проверяем, не будет ли урон смертельным
+
             if (playerController.CurrentHealth > 0)
             {
-                StartCoroutine(ShowBloodEffect()); // Запускаем эффект крови
+                StartCoroutine(ShowBloodEffect());
             }
-            
+
             yield return StartCoroutine(StunPlayer());
-            
-            // Скрываем призрака на 20 секунд
             SetVisibility(false);
             yield return new WaitForSeconds(20f);
-            
-            // Повторяем атаку
             if (hasReactedToIncense)
             {
                 StartCoroutine(PrepareAttackRoutine());
@@ -344,32 +319,25 @@ public class LostSoul : MonoBehaviour
         }
         else
         {
-            // Неуспешная атака - игрок увернулся
             isStunned = true;
             currentStunTime = stunDuration;
-            
+
             if (animator)
             {
                 animator.SetBool(IdleHash, true);
                 animator.SetBool(WalkHash, false);
                 animator.SetBool(RunHash, false);
             }
-
-            // Останавливаем агента
             if (agent.isOnNavMesh)
             {
                 agent.isStopped = true;
                 agent.ResetPath();
             }
 
-            // Ждем время оглушения
             yield return new WaitForSeconds(stunDuration);
-            
             isStunned = false;
             isOnCooldown = true;
             currentCooldownTime = cooldownDuration;
-            
-            // После оглушения и кулдауна продолжаем атаковать
             if (hasReactedToIncense)
             {
                 StartCoroutine(PrepareAttackRoutine());
@@ -390,7 +358,6 @@ public class LostSoul : MonoBehaviour
             offsetDir.y = 0;
             float distance = Random.Range(minAttackDistance, maxAttackDistance);
             Vector3 candidate = playerPos + offsetDir.normalized * distance;
-
             if (NavMesh.SamplePosition(candidate, out NavMeshHit hit, 2f, NavMesh.AllAreas))
                 return hit.position;
         }
@@ -413,7 +380,6 @@ public class LostSoul : MonoBehaviour
             isStunned = false;
             isOnCooldown = true;
             currentCooldownTime = cooldownDuration;
-
             if (!hasReactedToIncense)
                 SetVisibility(false);
         }
@@ -459,58 +425,43 @@ public class LostSoul : MonoBehaviour
         SetVisibility(false);
     }
 
+    // --- ИЗМЕНЕННЫЙ МЕТОД ---
     public void Exorcise()
     {
-        if (!isStunned) return;
-
-        // Отключаем все компоненты
-        if (agent != null) agent.enabled = false;
-        if (audioSource != null) audioSource.enabled = false;
-        if (animator != null) animator.enabled = false;
-
-        // Отключаем коллайдеры
-        Collider[] colliders = GetComponents<Collider>();
-        foreach (Collider col in colliders)
+        if (!isStunned)
         {
-            col.enabled = false;
+            Debug.Log("Заблудшая душа не оглушена, изгнание невозможно.");
+            return;
         }
 
-        // Отключаем рендереры
-        Renderer[] renderers = GetComponentsInChildren<Renderer>();
-        foreach (Renderer renderer in renderers)
-        {
-            renderer.enabled = false;
-        }
+        Debug.Log($"Призрак {this.gameObject.name} был изгнан.");
 
-        // Находим и перемещаем партиклы пыли
+        // Находим и проигрываем частицы пыли
         GameObject dustParticles = GameObject.FindGameObjectWithTag("Dust");
         if (dustParticles != null)
         {
-            dustParticles.transform.position = transform.position + Vector3.up * 3f;
+            dustParticles.transform.position = transform.position + Vector3.up;
             ParticleSystem dustSystem = dustParticles.GetComponent<ParticleSystem>();
             if (dustSystem != null)
             {
                 dustSystem.Play();
-                StartCoroutine(DestroyAfterParticles(dustSystem));
             }
-            else
-            {
-                Destroy(gameObject);
-            }
+        }
+
+        // Деактивируем призрака вместо его уничтожения
+        this.gameObject.SetActive(false);
+
+        // Находим PlayerSpawner на сцене
+        PlayerSpawner spawner = FindObjectOfType<PlayerSpawner>();
+        if (spawner != null)
+        {
+            // Сообщаем спавнеру, что этот призрак побежден, передавая свой тег.
+            spawner.GhostDefeated(this.gameObject.tag);
         }
         else
         {
-            Destroy(gameObject);
+            Debug.LogError("PlayerSpawner не найден на сцене! Перемещение игрока невозможно.");
         }
-    }
-
-    private IEnumerator DestroyAfterParticles(ParticleSystem particles)
-    {
-        if (particles != null)
-        {
-            yield return new WaitForSeconds(particles.main.duration);
-        }
-        Destroy(gameObject);
     }
 
     private void OnDrawGizmosSelected()
@@ -533,12 +484,11 @@ public class LostSoul : MonoBehaviour
     {
         if (bloodOverlay == null) yield break;
 
-        // Плавное появление
         float elapsedTime = 0f;
         Color startColor = bloodOverlay.color;
         startColor.a = 0f;
         Color targetColor = bloodOverlay.color;
-        targetColor.a = 0.4f; // Устанавливаем максимальную прозрачность на 0.4 (101/255)
+        targetColor.a = 0.4f;
 
         bloodOverlay.gameObject.SetActive(true);
         bloodOverlay.color = startColor;
@@ -546,22 +496,19 @@ public class LostSoul : MonoBehaviour
         while (elapsedTime < bloodFadeDuration)
         {
             elapsedTime += Time.deltaTime;
-            float alpha = Mathf.Lerp(0f, 0.4f, elapsedTime / bloodFadeDuration); // Плавно увеличиваем до 0.4
+            float alpha = Mathf.Lerp(0f, 0.4f, elapsedTime / bloodFadeDuration);
             bloodOverlay.color = new Color(targetColor.r, targetColor.g, targetColor.b, alpha);
             yield return null;
         }
 
         bloodOverlay.color = targetColor;
-
-        // Ждем время отображения
         yield return new WaitForSeconds(bloodDisplayDuration);
-
-        // Плавное исчезновение
         elapsedTime = 0f;
+
         while (elapsedTime < bloodFadeDuration)
         {
             elapsedTime += Time.deltaTime;
-            float alpha = Mathf.Lerp(0.4f, 0f, elapsedTime / bloodFadeDuration); // Плавно уменьшаем от 0.4
+            float alpha = Mathf.Lerp(0.4f, 0f, elapsedTime / bloodFadeDuration);
             bloodOverlay.color = new Color(targetColor.r, targetColor.g, targetColor.b, alpha);
             yield return null;
         }
