@@ -7,6 +7,7 @@ public class Transition : MonoBehaviour
 
     public void Trans()
     {
+        Debug.Log(" нопка нажалась");
         SceneManager.LoadScene(scene_number);
     }
 }
